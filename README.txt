@@ -1,2 +1,2 @@
-Atualização v26: agora é possível usar poções de cura e mana diretamente na Casa.
-Suba index.html, manifest.json, service-worker.js, icon-192.png e icon-512.png na raiz do GitHub Pages.
+Versão v27: status, bosses com identidade, eventos por bioma, companheiros evolutivos, economia avançada, atributos corrigidos.
+Para atualizar no GitHub Pages sem perder progresso, substitua somente os 5 arquivos na raiz mantendo o mesmo domínio.

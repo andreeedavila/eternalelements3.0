@@ -177,7 +177,7 @@
     const ELEMENTS = ["Fogo","Água","Terra"];
     const EQUIPMENT_SLOTS = ["elmo","arma","luvas","armadura","calcas","sapatos"];
     const SAVE_KEY = "eternal_elements_mobile_v7";
-    const SAVE_VERSION = 2;
+    const SAVE_VERSION = 3;
     const MAPS = {
       Floresta:{description:"Monstros ligados à Terra aparecem com mais frequência. Materiais de Terra são mais abundantes.", favoredElement:"Terra", hpMultiplier:1.05, xpMultiplier:1.00, goldMultiplier:1.00, materialBonus:{Terra:1}, difficulty:"Baixa", recommendedLevel:"1+", boss:{name:"Ent Supremo", element:"Terra", unlockClears:5}},
       Reino:{description:"Área mais rica e disputada. Combates rendem mais ouro e inimigos costumam ser mais organizados.", favoredElement:"Fogo", hpMultiplier:1.10, xpMultiplier:1.00, goldMultiplier:1.20, materialBonus:{Fogo:1}, difficulty:"Média", recommendedLevel:"3+", boss:{name:"Guardião Carmesim", element:"Fogo", unlockClears:5}},
@@ -240,28 +240,36 @@
 
     function getElementClass(element){ if(element==="Fogo") return "fire"; if(element==="Água") return "water"; return "earth"; }
     function getRarityClass(r){ if(r==="Raro") return "rarity-raro"; if(r==="Épico") return "rarity-epico"; if(r==="Lendário" || r==="Mítico") return "rarity-lendario"; return "rarity-comum"; }
+    
     function companionAction(){
       if(!player || !player.companion || !battleActive || !enemy) return false;
       const roll = Math.random();
+      const lvl = player.companion.level || 1;
+
       if(player.companion.id === "lobo_rubro" && roll < 0.35){
-        const dmg = 8 + player.level + Math.floor((player.companion.bonus||0)/2);
+        const dmg = 8 + player.level + lvl + Math.floor((player.companion.bonus||0)/2);
         enemy.hp -= dmg;
+        if(Math.random() < 0.25) {
+          enemy.statuses.queimadura = Math.max(enemy.statuses.queimadura, 2);
+          addLog("🔥 O Lobo Rubro aplicou queimadura.");
+        }
         addLog(`${player.companion.name} usou ${player.companion.skill} e causou ${dmg} de dano.`);
         return true;
       }
       if(player.companion.id === "coruja_mistica" && roll < 0.30){
-        const mana = 12 + Math.floor(player.level/2);
+        const mana = 12 + Math.floor(player.level/2) + lvl;
         player.mana = Math.min(getEffectiveMaxMana(), player.mana + mana);
         addLog(`${player.companion.name} usou ${player.companion.skill} e restaurou ${mana} de mana.`);
         return true;
       }
       if(player.companion.id === "urso_terreo" && roll < 0.28){
-        player.temporaryDefenseBonus += 4;
+        player.temporaryDefenseBonus += 4 + Math.floor(lvl/2);
         addLog(`${player.companion.name} usou ${player.companion.skill} e reforçou sua defesa.`);
         return true;
       }
       return false;
     }
+
     function formatSlotName(slot){ return {elmo:"Elmo",arma:"Arma",luvas:"Luvas",armadura:"Armadura",calcas:"Calças",sapatos:"Sapatos"}[slot] || slot; }
     function getClassData(cls){ return {guerreiro:{name:"Guerreiro",maxHp:140,attack:16,defense:10,maxMana:20},arqueiro:{name:"Arqueiro",maxHp:110,attack:20,defense:7,maxMana:30},mago:{name:"Mago",maxHp:85,attack:24,defense:4,maxMana:60}}[cls]; }
     function ensurePlayerState(){
@@ -325,6 +333,16 @@
       const valueBonus = recipe.bonus + Math.floor(player.level/2);
       return valueBonus * 5;
     }
+    function getMarketPressure(){
+      ensureEconomy();
+      return Math.max(0.85, 1 + (player.economy.itemsSold * 0.01) + (player.economy.itemsRefined * 0.006) - (player.economy.battlesLost * 0.01));
+    }
+
+    function getDynamicSellValue(item){
+      const pressure = getMarketPressure();
+      return Math.max(1, Math.floor((item.sellValue || 1) * pressure));
+    }
+
     function getNetGold(){
       ensureEconomy();
       return player.economy.goldEarned - player.economy.goldSpent;
@@ -364,6 +382,7 @@
       if(md && (!player || battleActive)) md.style.display = "none";
       if(!player) return renderCreateCharacter();
       ensurePlayerState();
+      ensurePlayerState();
       if(battleActive) return renderBattle();
       if(currentScreen==="merchant") return renderMerchant();
       if(currentScreen==="elder") return renderElder();
@@ -401,7 +420,7 @@
       const gender = document.getElementById("genderInput").value;
       const cls = document.getElementById("classInput").value;
       const data = getClassData(cls);
-      player = {
+      player = { version: SAVE_VERSION,
         version:SAVE_VERSION,
         name, gender, classKey:cls, className:data.name, level:1, xp:0, xpToNext:100, gold:0, aura:0,
         maxHp:data.maxHp, hp:data.maxHp, attack:data.attack, defense:data.defense, maxMana:data.maxMana, mana:data.maxMana,
@@ -517,6 +536,7 @@
 
         <div class="panel">
           <div style="font-size:18px;font-weight:800;margin-bottom:10px;">Inventário</div>
+          <p class="small">Protótipo visual futuro: inventário poderá virar um balão flutuante com ícones.</p>
           ${renderInventory()}
         </div>
 
@@ -527,41 +547,50 @@
     }
 
 
+    
     function createRandomEvent(){
-      const events = [
-        {
-          id:"viajante_ferido",
-          title:"Viajante Ferido",
-          text:"Você encontra um viajante ferido na estrada. Ele pede ajuda.",
-          choices:[
+      const byMap = {
+        Floresta: [
+          {id:"espirito_floresta", title:"Espírito da Floresta", text:"Um espírito antigo oferece poder em troca de sacrifício.", choices:[
+            {label:"Aceitar o pacto", effect:"forest_pact"},
+            {label:"Pedir bênção", effect:"forest_bless"},
+            {label:"Recusar", effect:"leave"}
+          ]},
+          {id:"viajante_ferido", title:"Viajante Ferido", text:"Você encontra um viajante ferido na mata.", choices:[
             {label:"Ajudar", effect:"heal_help"},
             {label:"Cobrar pelo socorro", effect:"gold_help"},
             {label:"Ignorar", effect:"leave"}
-          ]
-        },
-        {
-          id:"bauruina",
-          title:"Baú em Ruínas",
-          text:"Um baú antigo aparece entre os escombros do caminho.",
-          choices:[
+          ]}
+        ],
+        Reino: [
+          {id:"tesouro_real", title:"Baú do Reino", text:"Uma caixa nobre aparece guardada por runas antigas.", choices:[
             {label:"Abrir com cuidado", effect:"safe_chest"},
             {label:"Forçar abertura", effect:"risky_chest"},
+            {label:"Ignorar", effect:"leave"}
+          ]},
+          {id:"soldado_perdido", title:"Soldado Perdido", text:"Um soldado do reino pede ajuda para retornar ao posto.", choices:[
+            {label:"Guiar o soldado", effect:"gold_help"},
+            {label:"Saquear suprimentos", effect:"risky_chest"},
             {label:"Deixar para trás", effect:"leave"}
-          ]
-        },
-        {
-          id:"fonte_arcana",
-          title:"Fonte Arcana",
-          text:"Uma fonte brilhante pulsa com energia elemental.",
-          choices:[
+          ]}
+        ],
+        Lago: [
+          {id:"fonte_arcana", title:"Fonte Arcana", text:"Uma fonte brilhante pulsa com energia elemental.", choices:[
             {label:"Beber da fonte", effect:"mana_fountain"},
             {label:"Coletar essência", effect:"essence_fountain"},
             {label:"Não tocar", effect:"leave"}
-          ]
-        }
-      ];
+          ]},
+          {id:"eco_abissal", title:"Eco Abissal", text:"Você ouve uma canção no lago profundo.", choices:[
+            {label:"Seguir a voz", effect:"lake_song"},
+            {label:"Resistir à tentação", effect:"forest_bless"},
+            {label:"Ir embora", effect:"leave"}
+          ]}
+        ]
+      };
+      const events = byMap[player.currentMap] || [];
       return events[Math.floor(Math.random() * events.length)];
     }
+
 
     function renderEventEncounter(){
       const ev = player.eventChoice;
@@ -629,6 +658,19 @@
         player.homeCraftStock.manaEssence += 2;
         player.homeCraftStock.healEssence += 1;
         addLog("Você coletou essências mágicas na fonte.");
+      } else if(effect === "forest_pact"){
+        player.attack += 3;
+        player.maxHp = Math.max(20, player.maxHp - 10);
+        player.hp = Math.min(player.hp, player.maxHp);
+        addLog("Pacto aceito: +3 ataque, mas -10 HP máximo.");
+      } else if(effect === "forest_bless"){
+        player.homeCraftStock.healEssence += 2;
+        player.aura += 1;
+        addLog("A natureza o abençoou com essências e 1 aura.");
+      } else if(effect === "lake_song"){
+        player.mana = Math.min(getEffectiveMaxMana(), player.mana + 40);
+        player.homeCraftStock.manaEssence += 2;
+        addLog("O eco do lago restaurou sua mana e concedeu essências.");
       } else {
         addLog("Você decidiu seguir viagem sem interagir.");
       }
@@ -674,9 +716,9 @@
           ${item ? `
             <p><strong class="${getRarityClass(item.rarity)}">${item.name}</strong>${item.unique ? `<span class="badge rank">Único</span>` : ""}<span class="badge ${getElementClass(item.element)}">${item.element}</span></p>
             <p class="small">Bônus: +${item.bonus} ${item.statType==="attack"?"Ataque":"Defesa"} • Raridade: ${item.rarity}</p>
-            <p class="small">Venda sugerida: ${item.sellValue} ouro • Refino: +${item.refineLevel || 0}</p>
+            <p class="small">Venda sugerida: ${getDynamicSellValue(item)} ouro • Refino: +${item.refineLevel || 0}</p>
             <button onclick="unequipItem('${slot}')">Desequipar</button>
-            <button onclick="sellEquippedItem('${slot}')">Vender (${item.sellValue} ouro)</button>
+            <button onclick="sellEquippedItem('${slot}')">Vender (${getDynamicSellValue(item)} ouro)</button>
           ` : `<p class="empty">Nenhum item equipado.</p>`}
         </div>`;
       }).join("");
@@ -690,7 +732,7 @@
           <p class="small">Slot: ${formatSlotName(item.slot)} • Bônus: +${item.bonus} ${item.statType==="attack"?"Ataque":"Defesa"} • Raridade: ${item.rarity} • Refino: +${item.refineLevel || 0}</p>
           <p class="small">${getItemComparisonText(item)}</p>
           <button onclick="equipItem(${index})">Equipar</button>
-          <button onclick="sellItem(${index})">Vender (${item.sellValue} ouro)</button>
+          <button onclick="sellItem(${index})">Vender (${getDynamicSellValue(item)} ouro)</button>
         </div>`).join("");
     }
 
@@ -980,7 +1022,7 @@
               <p><strong class="${getRarityClass(recipe.rarity)}">${recipe.name}</strong><span class="badge ${getElementClass(recipe.element)}">${recipe.element}</span></p>
               <p class="small">Slot: ${formatSlotName(recipe.slot)} • Bônus base: +${recipe.bonus} ${recipe.statType==="attack"?"Ataque":"Defesa"}</p>
               <p class="small">Custo: ${recipe.cost} de ${recipe.material}</p>
-              <p class="small">Venda sugerida: ${getCraftPreviewSellValue(recipe)} ouro</p>
+              <p class="small">Venda sugerida: ${Math.floor(getCraftPreviewSellValue(recipe) * getMarketPressure())} ouro</p>
               <p class="small">${getCraftComparisonText(recipe)}</p>
               <p class="small">Se já existir item no mesmo slot, você poderá substituir o item equipado automaticamente ao forjar.</p>
               <button class="full" onclick="craftItem('${recipe.id}')" ${player.materials[recipe.material] < recipe.cost ? "disabled" : ""}>Forjar</button>
@@ -1001,7 +1043,7 @@
         return `<div class="item">
           <p><strong class="${getRarityClass(item.rarity)}">${item.name}</strong>${item.unique ? `<span class="badge rank">Único</span>` : ""}<span class="badge ${getElementClass(item.element)}">${item.element}</span></p>
           <p class="small">Bônus atual: +${item.bonus} • Refino: +${item.refineLevel || 0}</p>
-          <p class="small">Venda sugerida: ${item.sellValue} ouro</p>
+          <p class="small">Venda sugerida: ${getDynamicSellValue(item)} ouro</p>
           <p class="small">Custo do próximo refino: ${cost} material(is) de ${item.element}</p>
           <button class="full" onclick="refineInventoryItem(${index})" ${available ? "" : "disabled"}>Refinar item</button>
         </div>`;
@@ -1085,37 +1127,34 @@
       saveGame(); render();
     }
 
-function renderEconomy(){
+
+    function renderEconomy(){
       ensureEconomy();
       const avgWin = player.economy.battlesWon ? Math.floor(player.economy.goldEarned / player.economy.battlesWon) : 0;
-      const pressure = Math.max(1, 1 + (player.economy.itemsSold * 0.01) + (player.economy.itemsRefined * 0.005));
+      const pressure = getMarketPressure();
       document.getElementById("app").innerHTML = `
         <div class="panel">
           <div style="font-size:18px;font-weight:800;margin-bottom:10px;">Economia do Jogo</div>
-          <p class="small">Este painel ajuda a balancear o grind, mostrando entrada e saída de ouro do jogador.</p>
+          <p class="small">Mini-DRE do grind e da progressão econômica.</p>
           <div class="stats-grid">
-            <div class="stat"><div class="label">Ouro ganho</div><div class="value">${player.economy.goldEarned}</div></div>
-            <div class="stat"><div class="label">Ouro gasto</div><div class="value">${player.economy.goldSpent}</div></div>
-            <div class="stat"><div class="label">Saldo líquido</div><div class="value">${getNetGold()}</div></div>
+            <div class="stat"><div class="label">Receita</div><div class="value">${player.economy.goldEarned}</div></div>
+            <div class="stat"><div class="label">Despesas</div><div class="value">${player.economy.goldSpent}</div></div>
+            <div class="stat"><div class="label">Saldo</div><div class="value">${getNetGold()}</div></div>
+            <div class="stat"><div class="label">Mercado</div><div class="value">${pressure.toFixed(2)}x</div></div>
             <div class="stat"><div class="label">Vitórias</div><div class="value">${player.economy.battlesWon}</div></div>
             <div class="stat"><div class="label">Derrotas</div><div class="value">${player.economy.battlesLost}</div></div>
             <div class="stat"><div class="label">Itens vendidos</div><div class="value">${player.economy.itemsSold}</div></div>
-            <div class="stat"><div class="label">Itens forjados</div><div class="value">${player.economy.itemsCrafted}</div></div>
             <div class="stat"><div class="label">Itens refinados</div><div class="value">${player.economy.itemsRefined}</div></div>
-            <div class="stat"><div class="label">Yield mineração</div><div class="value">${player.economy.miningYield}</div></div>
+            <div class="stat"><div class="label">Itens forjados</div><div class="value">${player.economy.itemsCrafted}</div></div>
             <div class="stat"><div class="label">Média ouro/vitória</div><div class="value">${avgWin}</div></div>
           </div>
           <div class="subpanel">
-            <p><strong>Indicador de mercado:</strong> ${pressure.toFixed(2)}x</p>
-            <p class="small">Quanto mais você vende e refina, maior fica a pressão econômica do jogo para futuras calibragens.</p>
-          </div>
-          <div class="subpanel">
-            <p><strong>Leitura rápida:</strong></p>
-            <p class="small">Se o saldo líquido estiver crescendo rápido demais, o grind está generoso. Se estiver muito baixo ou negativo, o jogo está punitivo.</p>
-            <p class="small">Use este quadro como uma mini-DRE do jogo para calibrar batalha, crafting, vendas, mineração e estalagem.</p>
+            <p><strong>Leitura:</strong></p>
+            <p class="small">Mercado alto valoriza vendas. Muitas derrotas reduzem pressão. O objetivo é calibrar o loop de minerar, forjar, refinar e vender.</p>
           </div>
         </div>`;
     }
+
 
 
     function renderInnTrades(){
@@ -1191,7 +1230,7 @@ function renderEconomy(){
       player.gold -= c.price;
       ensureEconomy();
       player.economy.goldSpent += c.price;
-      player.companion = {...c};
+      player.companion = {...c, level:1, xp:0};
       addLog(`${player.name} adquiriu o companheiro ${c.name}.`);
       saveGame();
       render();
@@ -1301,42 +1340,120 @@ function renderEconomy(){
       };
     }
 
+    
     function renderBattle(){
+      ensureStatuses();
+      const hpPct = Math.max(0, Math.min(100, Math.floor((player.hp / player.maxHp) * 100)));
+      const manaPct = Math.max(0, Math.min(100, Math.floor((player.mana / getEffectiveMaxMana()) * 100)));
       document.getElementById("app").innerHTML = `
         <div class="panel">
           <div class="hero-line">
             <div><strong>${player.name}</strong> • ${player.className} • ${player.currentMap}</div>
             <div><span class="pill">Lvl ${player.level}</span></div>
           </div>
+
+          <div class="battle-grid">
+            <div class="item">
+              <p><strong>❤️ HP</strong> ${player.hp}/${player.maxHp}</p>
+              <div class="bar-wrap"><div class="bar-hp" style="width:${hpPct}%"></div></div>
+            </div>
+            <div class="item">
+              <p><strong>🔵 Mana</strong> ${player.mana}/${getEffectiveMaxMana()}</p>
+              <div class="bar-wrap"><div class="bar-mana" style="width:${manaPct}%"></div></div>
+            </div>
+          </div>
+
           <div class="stats-grid">
-            <div class="stat"><div class="label">HP</div><div class="value">${player.hp}/${player.maxHp}</div></div>
-            <div class="stat"><div class="label">Mana</div><div class="value">${player.mana}/${getEffectiveMaxMana()}</div></div>
             <div class="stat"><div class="label">Ataque total</div><div class="value">${getPlayerAttackValue()}</div></div>
             <div class="stat"><div class="label">Defesa total</div><div class="value">${getPlayerDefenseValue()}</div></div>
             <div class="stat"><div class="label">Cura</div><div class="value">F:${player.healPotions.frasco} C:${player.healPotions.calice} G:${player.healPotions.garrafa}</div></div>
             <div class="stat"><div class="label">Mana</div><div class="value">F:${player.manaPotionStock.frasco} C:${player.manaPotionStock.calice} G:${player.manaPotionStock.garrafa}</div></div>
           </div>
+
           <div class="subpanel">
             <p><strong>${enemy.name}</strong><span class="badge rank">${enemy.rank}</span><span class="badge ${getElementClass(enemy.element)}">${enemy.element}</span></p>
             <p>HP: ${enemy.hp}/${enemy.maxHp}</p>
             <p class="small">${elementHint(enemy.element)}</p>
-            <p class="small"><strong>Escala dinâmica ativa:</strong> inimigos acompanham seu progresso, equipamentos e refinos.</p>
+            <p class="small">${enemy.rank === 'Boss' ? `Habilidade do boss: ${getBossIdentity(player.currentMap).label}` : 'Escala dinâmica ativa: inimigos acompanham seu progresso.'}</p>
+            ${renderStatusChips(enemy)}
           </div>
+
           <div class="subpanel">
-            <p class="small">Usar poção também consome o turno.</p>
-            <button onclick="playerAttack()">Atacar</button>
-            <button onclick="useSkill()">Habilidade</button>
-            ${renderBattleConsumables()}
-            <button class="secondary" onclick="runAway()">Fugir</button>
+            <p><strong>Seus status</strong></p>
+            ${renderStatusChips(player) || '<p class="small">Sem status negativos.</p>'}
           </div>
-          <div class="subpanel">
-            <p><strong>Magias</strong></p>
+
+          <div class="subpanel battle-actions">
+            <div class="battle-section-title">Ações principais</div>
+            <button class="attack" onclick="playerAttack()">Atacar</button>
+            <button class="skill" onclick="useSkill()">Habilidade</button>
+
+            <div class="battle-section-title">Magias</div>
             ${renderBattleSpells()}
+
+            <div class="battle-section-title">Consumíveis</div>
+            ${renderBattleConsumables()}
+
+            <div class="battle-section-title">Saída</div>
+            <button class="flee secondary" onclick="runAway()">Fugir</button>
           </div>
         </div>
-        <div class="panel"><div style="font-size:18px;font-weight:800;margin-bottom:10px;">Combate</div><div class="log-box">${battleLog.slice(-14).map(msg => `<p>${msg}</p>`).join("")}</div></div>`;
+
+        <div class="panel">
+          <div style="font-size:18px;font-weight:800;margin-bottom:10px;">Combate</div>
+          <div class="log-box">${battleLog.slice(-14).map(msg => `<p>${msg}</p>`).join("")}</div>
+        </div>`;
     }
 
+
+
+    
+    function ensureStatuses(){
+      if(!player.statuses) player.statuses = {veneno:0, queimadura:0, congelamento:0, stun:0};
+      if(enemy && !enemy.statuses) enemy.statuses = {veneno:0, queimadura:0, congelamento:0, stun:0};
+    }
+
+    function getBossIdentity(mapName){
+      return {
+        Floresta: {effect:"veneno", label:"Esporos Tóxicos"},
+        Reino: {effect:"bloqueio", label:"Ruptura de Guarda"},
+        Lago: {effect:"drenar_mana", label:"Maré Exaustiva"}
+      }[mapName];
+    }
+
+    function applyStatusTicks(){
+      ensureStatuses();
+      if(player.statuses.veneno > 0){
+        player.hp = Math.max(1, player.hp - 6);
+        player.statuses.veneno -= 1;
+        addLog("☠ Veneno causa 6 de dano em você.");
+      }
+      if(player.statuses.queimadura > 0){
+        player.hp = Math.max(1, player.hp - 4);
+        player.statuses.queimadura -= 1;
+        addLog("🔥 Queimadura causa 4 de dano em você.");
+      }
+      if(enemy && enemy.statuses.veneno > 0){
+        enemy.hp = Math.max(1, enemy.hp - 6);
+        enemy.statuses.veneno -= 1;
+        addLog("☠ Veneno causa 6 de dano no inimigo.");
+      }
+      if(enemy && enemy.statuses.queimadura > 0){
+        enemy.hp = Math.max(1, enemy.hp - 4);
+        enemy.statuses.queimadura -= 1;
+        addLog("🔥 Queimadura causa 4 de dano no inimigo.");
+      }
+    }
+
+    function renderStatusChips(target){
+      if(!target || !target.statuses) return "";
+      const labels = [];
+      if(target.statuses.veneno > 0) labels.push(`<span class="status-chip">☠ Veneno ${target.statuses.veneno}</span>`);
+      if(target.statuses.queimadura > 0) labels.push(`<span class="status-chip">🔥 Queimadura ${target.statuses.queimadura}</span>`);
+      if(target.statuses.congelamento > 0) labels.push(`<span class="status-chip">❄ Congelado ${target.statuses.congelamento}</span>`);
+      if(target.statuses.stun > 0) labels.push(`<span class="status-chip">⚡ Atordoado ${target.statuses.stun}</span>`);
+      return labels.join("");
+    }
 
     function renderHomeConsumables(){
       let buttons = "";
@@ -1351,12 +1468,12 @@ function renderEconomy(){
 
     function renderBattleConsumables(){
       let buttons = "";
-      if((player.healPotions?.frasco || 0) > 0) buttons += `<button onclick="usePotion('frasco')">Cura F (${player.healPotions.frasco})</button>`;
-      if((player.healPotions?.calice || 0) > 0) buttons += `<button onclick="usePotion('calice')">Cura C (${player.healPotions.calice})</button>`;
-      if((player.healPotions?.garrafa || 0) > 0) buttons += `<button onclick="usePotion('garrafa')">Cura G (${player.healPotions.garrafa})</button>`;
-      if((player.manaPotionStock?.frasco || 0) > 0) buttons += `<button onclick="useManaPotion('frasco')">Mana F (${player.manaPotionStock.frasco})</button>`;
-      if((player.manaPotionStock?.calice || 0) > 0) buttons += `<button onclick="useManaPotion('calice')">Mana C (${player.manaPotionStock.calice})</button>`;
-      if((player.manaPotionStock?.garrafa || 0) > 0) buttons += `<button onclick="useManaPotion('garrafa')">Mana G (${player.manaPotionStock.garrafa})</button>`;
+      if((player.healPotions?.frasco || 0) > 0) buttons += `<button class="heal" onclick="usePotion('frasco')">Cura F (${player.healPotions.frasco})</button>`;
+      if((player.healPotions?.calice || 0) > 0) buttons += `<button class="heal" onclick="usePotion('calice')">Cura C (${player.healPotions.calice})</button>`;
+      if((player.healPotions?.garrafa || 0) > 0) buttons += `<button class="heal" onclick="usePotion('garrafa')">Cura G (${player.healPotions.garrafa})</button>`;
+      if((player.manaPotionStock?.frasco || 0) > 0) buttons += `<button class="mana" onclick="useManaPotion('frasco')">Mana F (${player.manaPotionStock.frasco})</button>`;
+      if((player.manaPotionStock?.calice || 0) > 0) buttons += `<button class="mana" onclick="useManaPotion('calice')">Mana C (${player.manaPotionStock.calice})</button>`;
+      if((player.manaPotionStock?.garrafa || 0) > 0) buttons += `<button class="mana" onclick="useManaPotion('garrafa')">Mana G (${player.manaPotionStock.garrafa})</button>`;
       return buttons || `<p class="small">Sem consumíveis disponíveis.</p>`;
     }
 
@@ -1365,7 +1482,7 @@ function renderEconomy(){
       return player.learnedSpells.map(id => {
         const spell = SPELL_BOOK.find(s => s.id === id);
         if(!spell) return "";
-        return `<button onclick="castSpell('${id}')" ${player.mana < spell.manaCost ? "disabled" : ""}>${spell.name} (${spell.manaCost})</button>`;
+        return `<button class="skill" onclick="castSpell('${id}')" ${player.mana < spell.manaCost ? "disabled" : ""}>${spell.name} (${spell.manaCost})</button>`;
       }).join("") || `<p class="small">Sem magias disponíveis.</p>`;
     }
 
@@ -1502,10 +1619,43 @@ function renderEconomy(){
       if(battleActive){ enemyTurn(); } else { addLog('Você restaurou mana na Casa usando um consumível.'); render(); }
     }
 
+    
     function enemyTurn(){
-      const dmg = Math.max(1, enemy.attack - getPlayerDefenseValue());
-      player.hp -= dmg;
-      addLog(`${enemy.name} atacou e causou ${dmg} de dano.`);
+      ensureStatuses();
+      applyStatusTicks();
+      if(enemy && enemy.hp <= 0) return winBattle();
+
+      if(player.statuses.stun > 0){
+        player.statuses.stun -= 1;
+      }
+
+      let damage = Math.max(1, enemy.attack - getPlayerDefenseValue());
+
+      if(enemy.rank === "Boss"){
+        const bossIdentity = getBossIdentity(player.currentMap);
+        if(bossIdentity.effect === "veneno" && Math.random() < 0.4){
+          player.statuses.veneno = Math.max(player.statuses.veneno, 3);
+          addLog(`☠ ${enemy.name} usou ${bossIdentity.label} e aplicou veneno.`);
+        }
+        if(bossIdentity.effect === "bloqueio" && Math.random() < 0.35){
+          player.temporaryDefenseBonus = Math.max(0, player.temporaryDefenseBonus - 3);
+          damage += 4;
+          addLog(`🛡 ${enemy.name} usou ${bossIdentity.label} e rompeu sua defesa.`);
+        }
+        if(bossIdentity.effect === "drenar_mana" && Math.random() < 0.45){
+          player.mana = Math.max(0, player.mana - 12);
+          addLog(`🌊 ${enemy.name} usou ${bossIdentity.label} e drenou 12 de mana.`);
+        }
+      }
+
+      if(player.statuses.congelamento > 0){
+        damage += 3;
+        player.statuses.congelamento -= 1;
+      }
+
+      player.hp -= damage;
+      addLog(`${enemy.name} atacou e causou ${damage} de dano.`);
+
       if(player.hp <= 0){
         player.hp = 0;
         addLog(`${player.name} foi derrotado.`);
@@ -1514,11 +1664,17 @@ function renderEconomy(){
         ensureEconomy();
         player.economy.goldSpent += 10;
         player.economy.battlesLost += 1;
-        player.hp = player.maxHp; player.mana = getEffectiveMaxMana(); player.temporaryDefenseBonus = 0;
-        battleActive = false; enemy = null; currentScreen = "casa";
+        player.hp = player.maxHp;
+        player.mana = getEffectiveMaxMana();
+        player.temporaryDefenseBonus = 0;
+        battleActive = false;
+        enemy = null;
+        currentScreen = "casa";
       }
+
       saveGame(); render();
     }
+
 
     function runAway(){
       addLog(`${player.name} fugiu da batalha.`);
@@ -1579,6 +1735,7 @@ function renderEconomy(){
         player.homeCraftStock.manaEssence += 1;
         addLog("Monstro dropou 1 Essência de Mana.");
       }
+      grantCompanionXP();
       handleLevelUp();
       player.temporaryDefenseBonus = 0;
       player.hp = Math.max(1, Math.min(player.maxHp, player.hp));
@@ -1586,18 +1743,30 @@ function renderEconomy(){
       saveGame(); render();
     }
 
+    
     function handleLevelUp(){
       let leveled = false;
       while(player.xp >= player.xpToNext){
-        player.xp -= player.xpToNext; player.level += 1; player.xpToNext = Math.floor(player.xpToNext * 1.35);
-        player.maxHp += 18; player.attack += 4; player.defense += 2; player.maxMana += 8; player.aura += 1;
-        player.hp = player.maxHp; player.mana = getEffectiveMaxMana(); leveled = true;
+        ensurePlayerState();
+        player.xp -= player.xpToNext;
+        player.level += 1;
+        player.xpToNext = Math.floor(player.xpToNext * 1.35);
+        player.maxHp += 18;
+        player.attack += 4;
+        player.defense += 2;
+        player.maxMana += 8;
+        player.aura += 1;
+        player.attributes.points += 2;
+        player.hp = player.maxHp;
+        player.mana = getEffectiveMaxMana();
+        leveled = true;
         addLog(`LEVEL UP! ${player.name} agora está no nível ${player.level}.`);
         addLog(`Você recebeu 1 aura. Total atual: ${player.aura}.`);
         addLog(`Você recebeu 2 pontos de atributo. Total disponível: ${player.attributes.points}.`);
       }
-      if(leveled) alert(`Parabéns! ${player.name} subiu de nível, foi restaurado e recebeu aura(s).`);
+      if(leveled) alert(`Parabéns! ${player.name} subiu de nível, foi restaurado e recebeu aura(s) e pontos de atributo.`);
     }
+
 
 
     function createBossLoot(mapName){
@@ -1773,14 +1942,14 @@ function renderEconomy(){
     }
     function sellItem(index){
       const item = player.inventory[index]; if(!item) return;
-      player.gold += item.sellValue; ensureEconomy(); player.economy.goldEarned += item.sellValue; player.economy.itemsSold += 1; player.inventory.splice(index,1);
-      addLog(`${item.name} foi vendido por ${item.sellValue} ouro.`);
+      const finalSell = getDynamicSellValue(item); player.gold += finalSell; ensureEconomy(); player.economy.goldEarned += finalSell; player.economy.itemsSold += 1; player.inventory.splice(index,1);
+      addLog(`${item.name} foi vendido por ${finalSell} ouro.`);
       saveGame(); render();
     }
     function sellEquippedItem(slot){
       const item = player.equipment[slot]; if(!item) return;
-      player.gold += item.sellValue; ensureEconomy(); player.economy.goldEarned += item.sellValue; player.economy.itemsSold += 1; player.equipment[slot]=null;
-      addLog(`${item.name} estava equipado e foi vendido por ${item.sellValue} ouro.`);
+      const finalSell = getDynamicSellValue(item); player.gold += finalSell; ensureEconomy(); player.economy.goldEarned += finalSell; player.economy.itemsSold += 1; player.equipment[slot]=null;
+      addLog(`${item.name} estava equipado e foi vendido por ${finalSell} ouro.`);
       saveGame(); render();
     }
 
@@ -1836,6 +2005,17 @@ function renderEconomy(){
     function goTab(tab){ currentScreen = tab; saveGame(); render(); }
     function addLog(message){ battleLog.push(message); }
 
+    function grantCompanionXP(){
+      if(!player.companion) return;
+      player.companion.xp = (player.companion.xp || 0) + 1;
+      if(player.companion.xp >= 3){
+        player.companion.xp = 0;
+        player.companion.level = (player.companion.level || 1) + 1;
+        player.companion.bonus += 1;
+        addLog(`🐾 ${player.companion.name} subiu para o nível ${player.companion.level}.`);
+      }
+    }
+
     function updateQuest(type, data={}){
       player.quests.forEach(q=>{
         if(q.claimed) return;
@@ -1876,13 +2056,18 @@ function renderEconomy(){
       const raw = localStorage.getItem(SAVE_KEY); if(!raw) return false;
       try{
         const data = JSON.parse(raw);
-        player = data.player || null; enemy = data.enemy || null; battleActive = !!data.battleActive;
+        player = data.player || null;
+        enemy = data.enemy || null;
+        battleActive = !!data.battleActive;
         battleLog = Array.isArray(data.battleLog) ? data.battleLog : [];
-        currentScreen = data.currentScreen || "casa"; selectedBattleRank = data.selectedBattleRank || "random";
-        player = migrateSave(player);
-        ensurePlayerState();
+        currentScreen = data.currentScreen || "casa";
+        selectedBattleRank = data.selectedBattleRank || "random";
+        migrateSave();
         return !!player;
-      }catch(e){ console.error("Erro ao carregar save:", e); return false; }
+      }catch(e){
+        console.error("Erro ao carregar save:", e);
+        return false;
+      }
     }
     function continueGame(){ if(loadGame()){ addLog("Progresso carregado com sucesso."); render(); } }
     function resetSave(){ localStorage.removeItem(SAVE_KEY); player=null; enemy=null; battleActive=false; battleLog=[]; currentScreen="base"; selectedBattleRank="random"; render(); }
