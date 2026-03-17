@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0f172a" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <link rel="manifest" href="manifest.json" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="apple-touch-icon" href="icon-192.png" />
   <meta name="mobile-web-app-capable" content="yes" />
   <title>Eternal Elements Mobile v7</title>
   <style>
@@ -159,7 +156,7 @@
     <div id="app"></div>
   </div>
 
-  <button id="menuToggle" onclick="toggleMenu()" style="display:none; position:fixed; top:12px; left:12px; z-index:50; background:#1e293b; border:1px solid #475569; border-radius:12px; padding:10px 12px; font-weight:700;">☰ Menu</button>
+  <button id="menuToggle" onclick="toggleMenu()" style="display:none; position:fixed; top:12px; left:12px; z-index:50; background:#1e293b; border:1px solid #475569; border-radius:12px; padding:10px 12px; font-weight:700;">⚙ AÇÕES</button>
   <div id="menuDrawer" style="display:none; position:fixed; top:56px; left:12px; z-index:49; width:220px; background:#0f172a; border:1px solid #475569; border-radius:14px; padding:10px; box-shadow:0 12px 28px rgba(0,0,0,.35);">
     <button class="full" onclick="goTab('casa'); closeMenu();">Casa</button>
     <button class="full" onclick="goTab('world'); closeMenu();">Mundo</button>
@@ -170,6 +167,7 @@
     <button class="full" onclick="goTab('inn'); closeMenu();">Estalagem</button>
     <button class="full" onclick="goTab('quests'); closeMenu();">Quests</button>
     <button class="full" onclick="goTab('economy'); closeMenu();">Economia</button>
+    <button class="full" onclick="goTab('version'); closeMenu();">Versão</button>
     <button class="full" onclick="goTab('save'); closeMenu();">Salvar</button>
   </div>
 
@@ -228,6 +226,8 @@
     };
 
     let player = null, enemy = null, battleActive = false, battleLog = [], currentScreen = "casa", selectedBattleRank = "random";
+    const GAME_VERSION = "v38";
+    let lastRollInfo = {type:"-", roll:0, base:0, damage:0};
     function toggleMenu(){
       const d = document.getElementById("menuDrawer");
       if(!d) return;
@@ -238,8 +238,91 @@
       if(d) d.style.display = "none";
     }
 
+    
+    function getVersionNotes(){
+      return [
+        {version:"v38", notes:[
+          "Painel de versão agora inclui changelog completo das versões recentes.",
+          "Eventos do mapa receberam consequências extras: buffs, essências, emboscadas e batalhas ocasionais.",
+          "Essências e bênçãos do mapa agora podem gerar efeitos temporários para as próximas batalhas."
+        ]},
+        {version:"v37", notes:[
+          "Aba de versão adicionada no menu AÇÕES.",
+          "Painel mostra a versão atual do jogo.",
+          "Histórico mostra o que entrou da versão anterior para a atual."
+        ]},
+        {version:"v36", notes:[
+          "Barras líquidas corrigidas na batalha.",
+          "Barras líquidas adicionadas também na CASA.",
+          "Barra de vida do inimigo passou a usar o mesmo estilo."
+        ]},
+        {version:"v35", notes:[
+          "Primeira implementação das barras com efeito de líquido.",
+          "Animação de onda para HP e mana.",
+          "Visual de combate ficou mais próximo de um RPG."
+        ]},
+        {version:"v34", notes:[
+          "Crítico e falha no d20.",
+          "IA inimiga melhorada.",
+          "Status elementais no combate."
+        ]},
+        {version:"v33", notes:[
+          "Base estável restaurada.",
+          "d20 mínimo no combate.",
+          "Botão renomeado para AÇÕES."
+        ]},
+        {version:"v32", notes:[
+          "Tentativa de correção da batalha com painel de d20.",
+          "Ajustes na renderização da tela de combate."
+        ]},
+        {version:"v31", notes:[
+          "Retorno da interface anterior de inventário, atributos e slots.",
+          "Primeira volta do d20 no combate."
+        ]},
+        {version:"v30", notes:[
+          "Restauração da interface visual funcional.",
+          "Menu passou a exibir o nome AÇÕES."
+        ]},
+        {version:"v29", notes:[
+          "Painéis flutuantes para equipamentos, inventário e atributos foram testados.",
+          "Rolagem d20 expandida para ataque, habilidade e magia."
+        ]},
+        {version:"v28", notes:[
+          "Primeiro protótipo visual do personagem e dos equipamentos.",
+          "Inventário flutuante experimental."
+        ]},
+        {version:"v27", notes:[
+          "Atributos corrigidos no level up.",
+          "Sistema de status e bosses por mapa consolidado.",
+          "Economia avançada, companheiros evolutivos e eventos por bioma."
+        ]}
+      ];
+    }
+
+
+    function renderVersionPanel(){
+      const versions = getVersionNotes();
+      document.getElementById("app").innerHTML = `
+        <div class="panel">
+          <div style="font-size:20px;font-weight:900;margin-bottom:10px;">Versão do jogo</div>
+          <p><strong>Versão atual:</strong> ${GAME_VERSION}</p>
+          <p class="small">Este painel registra o que foi adicionado de uma versão para a próxima. As entradas abaixo cobrem a linha estável recente do projeto.</p>
+        </div>
+        ${versions.map(v => `
+          <div class="panel">
+            <div style="font-size:18px;font-weight:800;margin-bottom:8px;">${v.version}</div>
+            ${v.notes.map(n => `<p class="small">• ${n}</p>`).join("")}
+          </div>
+        `).join("")}
+      `;
+    }
+
     function getElementClass(element){ if(element==="Fogo") return "fire"; if(element==="Água") return "water"; return "earth"; }
     function getRarityClass(r){ if(r==="Raro") return "rarity-raro"; if(r==="Épico") return "rarity-epico"; if(r==="Lendário" || r==="Mítico") return "rarity-lendario"; return "rarity-comum"; }
+    function renderLiquidBar(type, current, maximum){
+      const pct = Math.max(0, Math.min(100, Math.floor((current / maximum) * 100)));
+      return `<div class="liquid-meter"><div class="liquid-fill ${type}" style="width:${pct}%"><div class="liquid-wave"></div></div><div class="liquid-label">${current}/${maximum}</div></div>`;
+    }
     
     function companionAction(){
       if(!player || !player.companion || !battleActive || !enemy) return false;
@@ -316,6 +399,7 @@
       if(!player.learnedSpells) player.learnedSpells = [];
       if(!player.currentMap) player.currentMap = "Floresta";
       if(player.eventChoice === undefined) player.eventChoice = null;
+      if(!player.worldBuffs) player.worldBuffs = {attack:0,defense:0,mana:0,luck:0,duration:0};
       if(!player.attributes) player.attributes = {forca:0,resistencia:0,inteligencia:0,points:0};
       if(typeof player.attributes.points !== 'number') player.attributes.points = 0;
       if(!player.attributes) player.attributes = {forca:0,resistencia:0,inteligencia:0,points:0};
@@ -392,6 +476,7 @@
       if(currentScreen==="inn") return renderInn();
       if(currentScreen==="save") return renderSaveCenter();
       if(currentScreen==="economy") return renderEconomy();
+      if(currentScreen==="version") return renderVersionPanel();
       if(currentScreen==="quests") return renderQuests();
       if(currentScreen==="event") return renderEventEncounter();
       if(currentScreen==="more") return renderMore();
@@ -428,7 +513,7 @@
         inventory:[], learnedSpells:[], temporaryDefenseBonus:0, currentMap:"Floresta",
         companion:null,
         attributes:{forca:0,resistencia:0,inteligencia:0,points:0},
-        homeCraftStock:{healEssence:0,manaEssence:0}, eventChoice:null,
+        homeCraftStock:{healEssence:0,manaEssence:0}, eventChoice:null, worldBuffs:{attack:0,defense:0,mana:0,luck:0,duration:0},
         innUniqueQuests:[
           {id:"inn1", title:"Entrega da Estalagem", desc:"Venda 3 itens para os hóspedes da estalagem.", progress:0, target:3, rewardGold:90, rewardAura:1, claimed:false},
           {id:"inn2", title:"Colecionador Noturno", desc:"Mine 6 recursos e retorne à estalagem.", progress:0, target:6, rewardGold:70, rewardAura:1, claimed:false}
@@ -466,9 +551,14 @@
             <div><span class="pill">Lvl ${player.level}</span><span class="pill">XP ${player.xp}/${player.xpToNext}</span></div>
           </div>
 
+          <div class="subpanel">
+            <p><strong>❤️ HP</strong></p>
+            ${renderLiquidBar('hp', player.hp, player.maxHp)}
+            <p style="margin-top:10px;"><strong>🔵 Mana</strong></p>
+            ${renderLiquidBar('mana', player.mana, getEffectiveMaxMana())}
+          </div>
+
           <div class="stats-grid">
-            <div class="stat"><div class="label">HP</div><div class="value">${player.hp}/${player.maxHp}</div></div>
-            <div class="stat"><div class="label">Mana</div><div class="value">${player.mana}/${getEffectiveMaxMana()}</div></div>
             <div class="stat"><div class="label">Ataque</div><div class="value">${player.attack} ${atkB ? `<span class="highlight">+${atkB}</span>` : ""}</div></div>
             <div class="stat"><div class="label">Defesa</div><div class="value">${player.defense} ${defB ? `<span class="highlight">+${defB}</span>` : ""}</div></div>
             <div class="stat"><div class="label">Ouro</div><div class="value">${player.gold}</div></div>
@@ -481,6 +571,7 @@
             <p style="font-size:12px; color:#facc15; font-weight:800; letter-spacing:.08em;">MAPA ATUAL</p>
             <p style="font-size:24px; font-weight:900; margin:4px 0 8px;">${player.currentMap}</p>
             <p class="small">${mapData.description}</p>
+            ${getActiveWorldBuffText() ? `<p class="small"><strong>${getActiveWorldBuffText()}</strong></p>` : ""}
             <p class="small"><strong>Node atual:</strong> ${getCurrentNode().name}</p>
             <p class="small"><strong>Vitórias no mapa:</strong> ${progress.clears} • <strong>Mineração:</strong> ${progress.mines}</p>
             <p class="small"><strong>Boss:</strong> ${mapData.boss.name} • ${progress.bossUnlocked ? (progress.bossDefeated ? "Derrotado" : "Desbloqueado") : `Bloqueado (${mapData.boss.unlockClears - progress.clears} vitórias restantes)`}</p>
@@ -623,17 +714,32 @@
         player.hp = Math.min(player.maxHp, player.hp + 35);
         player.aura += 1;
         addLog("Você ajudou o viajante, recuperou vida e ganhou 1 aura.");
+        if(Math.random() < 0.25){
+          addLog("Bandidos viram a cena e iniciaram uma emboscada!");
+          player.eventChoice = null;
+          currentScreen = "world";
+          saveGame();
+          startBattle();
+          return;
+        }
       } else if(effect === "gold_help"){
         player.gold += 35;
         ensureEconomy();
         player.economy.goldEarned += 35;
+        player.worldBuffs.luck = 0;
         addLog("Você cobrou pelo socorro e recebeu 35 ouro.");
       } else if(effect === "safe_chest"){
         player.gold += 25;
         player.homeCraftStock.healEssence += 1;
         ensureEconomy();
         player.economy.goldEarned += 25;
-        addLog("Você abriu o baú com cuidado e encontrou ouro e essência de cura.");
+        if(Math.random() < 0.3){
+          player.healPotions.frasco += 1;
+          player.potions += 1;
+          addLog("Você abriu o baú com cuidado e encontrou ouro, essência de cura e 1 Frasco de Cura.");
+        } else {
+          addLog("Você abriu o baú com cuidado e encontrou ouro e essência de cura.");
+        }
       } else if(effect === "risky_chest"){
         const roll = Math.random();
         if(roll < 0.5){
@@ -647,30 +753,56 @@
             player.economy.goldEarned += 45;
             addLog("Você forçou o baú e achou 45 ouro.");
           }
-        } else {
+        } else if(roll < 0.82){
           player.hp = Math.max(1, player.hp - 20);
           addLog("Armadilha! Você perdeu 20 HP ao forçar o baú.");
+        } else {
+          addLog("Um guardião do baú despertou!");
+          player.eventChoice = null;
+          currentScreen = "world";
+          saveGame();
+          startBattle();
+          return;
         }
       } else if(effect === "mana_fountain"){
         player.mana = Math.min(getEffectiveMaxMana(), player.mana + 60);
-        addLog("A fonte restaurou 60 de mana.");
+        player.worldBuffs.mana = Math.max(player.worldBuffs.mana, 20);
+        player.worldBuffs.luck = Math.max(player.worldBuffs.luck, 1);
+        player.worldBuffs.duration = Math.max(player.worldBuffs.duration, 2);
+        addLog("A fonte restaurou 60 de mana e concedeu um buff arcano por 2 batalhas.");
       } else if(effect === "essence_fountain"){
         player.homeCraftStock.manaEssence += 2;
         player.homeCraftStock.healEssence += 1;
-        addLog("Você coletou essências mágicas na fonte.");
+        player.worldBuffs.attack = Math.max(player.worldBuffs.attack, 3);
+        player.worldBuffs.duration = Math.max(player.worldBuffs.duration, 1);
+        addLog("Você coletou essências mágicas na fonte e ganhou +3 ATQ na próxima batalha.");
+        if(Math.random() < 0.3){
+          addLog("Um guardião elemental surgiu da fonte!");
+          player.eventChoice = null;
+          currentScreen = "world";
+          saveGame();
+          startBattle();
+          return;
+        }
       } else if(effect === "forest_pact"){
         player.attack += 3;
+        player.worldBuffs.attack = Math.max(player.worldBuffs.attack, 4);
+        player.worldBuffs.duration = Math.max(player.worldBuffs.duration, 2);
         player.maxHp = Math.max(20, player.maxHp - 10);
         player.hp = Math.min(player.hp, player.maxHp);
-        addLog("Pacto aceito: +3 ataque, mas -10 HP máximo.");
+        addLog("Pacto aceito: +3 ataque permanente, +4 ATQ por 2 batalhas, mas -10 HP máximo.");
       } else if(effect === "forest_bless"){
         player.homeCraftStock.healEssence += 2;
         player.aura += 1;
-        addLog("A natureza o abençoou com essências e 1 aura.");
+        player.worldBuffs.defense = Math.max(player.worldBuffs.defense, 3);
+        player.worldBuffs.duration = Math.max(player.worldBuffs.duration, 2);
+        addLog("A natureza o abençoou com essências, 1 aura e +3 DEF por 2 batalhas.");
       } else if(effect === "lake_song"){
         player.mana = Math.min(getEffectiveMaxMana(), player.mana + 40);
         player.homeCraftStock.manaEssence += 2;
-        addLog("O eco do lago restaurou sua mana e concedeu essências.");
+        player.worldBuffs.mana = Math.max(player.worldBuffs.mana, 15);
+        player.worldBuffs.duration = Math.max(player.worldBuffs.duration, 2);
+        addLog("O eco do lago restaurou sua mana, concedeu essências e +15 MANA por 2 batalhas.");
       } else {
         addLog("Você decidiu seguir viagem sem interagir.");
       }
@@ -1262,7 +1394,9 @@
       battleActive = true;
       currentScreen = "battle";
       player.temporaryDefenseBonus = 0;
+      lastRollInfo = {type:"-", roll:0, base:0, damage:0};
       addLog(`Um ${enemy.rank} surgiu em ${player.currentMap}: ${enemy.name} de ${enemy.element}!`);
+      if(getActiveWorldBuffText()) addLog(getActiveWorldBuffText());
       saveGame(); render();
     }
 
@@ -1354,12 +1488,12 @@
 
           <div class="battle-grid">
             <div class="item">
-              <p><strong>❤️ HP</strong> ${player.hp}/${player.maxHp}</p>
-              <div class="bar-wrap"><div class="bar-hp" style="width:${hpPct}%"></div></div>
+              <p><strong>❤️ HP</strong></p>
+              ${renderLiquidBar('hp', player.hp, player.maxHp)}
             </div>
             <div class="item">
-              <p><strong>🔵 Mana</strong> ${player.mana}/${getEffectiveMaxMana()}</p>
-              <div class="bar-wrap"><div class="bar-mana" style="width:${manaPct}%"></div></div>
+              <p><strong>🔵 Mana</strong></p>
+              ${renderLiquidBar('mana', player.mana, getEffectiveMaxMana())}
             </div>
           </div>
 
@@ -1372,7 +1506,8 @@
 
           <div class="subpanel">
             <p><strong>${enemy.name}</strong><span class="badge rank">${enemy.rank}</span><span class="badge ${getElementClass(enemy.element)}">${enemy.element}</span></p>
-            <p>HP: ${enemy.hp}/${enemy.maxHp}</p>
+            <p><strong>Vida do inimigo</strong></p>
+            ${renderLiquidBar('hp', enemy.hp, enemy.maxHp)}
             <p class="small">${elementHint(enemy.element)}</p>
             <p class="small">${enemy.rank === 'Boss' ? `Habilidade do boss: ${getBossIdentity(player.currentMap).label}` : 'Escala dinâmica ativa: inimigos acompanham seu progresso.'}</p>
             ${renderStatusChips(enemy)}
@@ -1380,6 +1515,7 @@
 
           <div class="subpanel">
             <p><strong>Seus status</strong></p>
+            ${getActiveWorldBuffText() ? `<p class="small"><strong>${getActiveWorldBuffText()}</strong></p>` : ""}
             ${renderStatusChips(player) || '<p class="small">Sem status negativos.</p>'}
           </div>
 
@@ -1396,6 +1532,16 @@
 
             <div class="battle-section-title">Saída</div>
             <button class="flee secondary" onclick="runAway()">Fugir</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div style="font-size:18px;font-weight:800;margin-bottom:10px;">Dados da rodada</div>
+          <div class="dice-box">
+            <div class="dice-card"><div class="small">Tipo</div><div>${lastRollInfo.type}</div></div>
+            <div class="dice-card"><div class="small">d20</div><div class="dice-value">${lastRollInfo.roll || "-"}</div></div>
+            <div class="dice-card"><div class="small">Base</div><div>${lastRollInfo.base || "-"}</div></div>
+            <div class="dice-card"><div class="small">Dano final</div><div>${lastRollInfo.damage || "-"}</div></div>
           </div>
         </div>
 
@@ -1487,24 +1633,117 @@
     }
 
     function elementHint(e){ if(e==="Fogo") return "Fraqueza: Água"; if(e==="Água") return "Fraqueza: Terra"; return "Fraqueza: Fogo"; }
+
+    function getClassCombatBonus(){
+      if(player.classKey === "guerreiro") return {attackRoll:2, skillRoll:2, critChance:0.05};
+      if(player.classKey === "arqueiro") return {attackRoll:0, skillRoll:1, critChance:0.15};
+      return {attackRoll:0, skillRoll:2, critChance:0.08};
+    }
+
+    function applyElementalStatusFromPlayer(kind, element){
+      if(!enemy || !enemy.statuses) return;
+      const chance = kind === "spell" ? 0.35 : 0.2;
+      const roll = Math.random();
+      if(element === "Fogo" && roll < chance){
+        enemy.statuses.queimadura = Math.max(enemy.statuses.queimadura, 2);
+        addLog("🔥 O inimigo sofreu queimadura.");
+      } else if(element === "Água" && roll < chance){
+        enemy.statuses.congelamento = Math.max(enemy.statuses.congelamento, 1);
+        addLog("❄ O inimigo sofreu lentidão gélida.");
+      } else if(element === "Terra" && roll < chance){
+        player.hp = Math.min(player.maxHp, player.hp + 5);
+        addLog("🌿 A afinidade com Terra regenerou 5 HP.");
+      }
+    }
+
+    function applyElementalStatusFromEnemy(){
+      if(!enemy || !player.statuses) return;
+      const roll = Math.random();
+      if(enemy.element === "Fogo" && roll < 0.22){
+        player.statuses.queimadura = Math.max(player.statuses.queimadura, 2);
+        addLog("🔥 Você sofreu queimadura.");
+      } else if(enemy.element === "Água" && roll < 0.22){
+        player.statuses.congelamento = Math.max(player.statuses.congelamento, 1);
+        addLog("❄ Você sofreu lentidão gélida.");
+      } else if(enemy.element === "Terra" && roll < 0.20){
+        enemy.hp = Math.min(enemy.maxHp, enemy.hp + 5);
+        addLog("🌿 O inimigo regenerou 5 HP com a força da Terra.");
+      }
+    }
+
+    function tryEnemySkill(){
+      if(!enemy) return false;
+      const roll = Math.random();
+      if(enemy.rank === "Boss" && roll < 0.45){
+        const id = getBossIdentity(player.currentMap);
+        if(id.effect === "veneno"){
+          player.statuses.veneno = Math.max(player.statuses.veneno, 3);
+          addLog(`☠ ${enemy.name} lançou ${id.label} e envenenou você.`);
+        } else if(id.effect === "bloqueio"){
+          player.temporaryDefenseBonus = Math.max(0, player.temporaryDefenseBonus - 4);
+          addLog(`🛡 ${enemy.name} usou ${id.label} e reduziu sua defesa temporária.`);
+        } else if(id.effect === "drenar_mana"){
+          player.mana = Math.max(0, player.mana - 14);
+          addLog(`🌊 ${enemy.name} usou ${id.label} e drenou 14 de mana.`);
+        }
+        lastRollInfo = {type:id.label, roll:"SKILL", base:0, damage:0};
+        return true;
+      }
+      if(enemy.rank !== "Boss" && roll < 0.18){
+        if(enemy.element === "Fogo"){
+          player.statuses.queimadura = Math.max(player.statuses.queimadura, 2);
+          addLog(`🔥 ${enemy.name} aplicou queimadura.`);
+        } else if(enemy.element === "Água"){
+          player.statuses.congelamento = Math.max(player.statuses.congelamento, 1);
+          addLog(`❄ ${enemy.name} aplicou lentidão gélida.`);
+        } else if(enemy.element === "Terra"){
+          enemy.hp = Math.min(enemy.maxHp, enemy.hp + 6);
+          addLog(`🌿 ${enemy.name} usou pele de terra e regenerou 6 HP.`);
+        }
+        lastRollInfo = {type:"Técnica inimiga", roll:"SKILL", base:0, damage:0};
+        return true;
+      }
+      return false;
+    }
+
     function getElementalMultiplier(a,t){
       if((a==="Fogo"&&t==="Terra")||(a==="Terra"&&t==="Água")||(a==="Água"&&t==="Fogo")) return 1.25;
       if((a==="Terra"&&t==="Fogo")||(a==="Água"&&t==="Terra")||(a==="Fogo"&&t==="Água")) return 0.8;
       return 1;
     }
+
+    function getActiveWorldBuffText(){
+      if(!player || !player.worldBuffs || player.worldBuffs.duration <= 0) return "";
+      const parts = [];
+      if(player.worldBuffs.attack) parts.push(`ATQ +${player.worldBuffs.attack}`);
+      if(player.worldBuffs.defense) parts.push(`DEF +${player.worldBuffs.defense}`);
+      if(player.worldBuffs.mana) parts.push(`MANA +${player.worldBuffs.mana}`);
+      if(player.worldBuffs.luck) parts.push(`SORTE +${player.worldBuffs.luck}`);
+      return `Buff ativo (${player.worldBuffs.duration} batalha${player.worldBuffs.duration>1?'s':''}): ` + parts.join(" • ");
+    }
+
+    function consumeWorldBuffBattle(){
+      if(!player || !player.worldBuffs || player.worldBuffs.duration <= 0) return;
+      player.worldBuffs.duration -= 1;
+      if(player.worldBuffs.duration <= 0){
+        player.worldBuffs = {attack:0,defense:0,mana:0,luck:0,duration:0};
+        addLog("Os efeitos temporários do mapa se dissiparam.");
+      }
+    }
+
     function getEquipmentBonus(type){ return EQUIPMENT_SLOTS.reduce((tot,slot)=>{const item = player.equipment[slot]; if(item && item.statType===type) tot += item.bonus; return tot;},0); }
     function getPlayerAttackValue(){
-      let bonus = player.attack + getEquipmentBonus("attack");
+      let bonus = player.attack + getEquipmentBonus("attack") + ((player.worldBuffs && player.worldBuffs.duration>0) ? player.worldBuffs.attack : 0);
       if(player.companion && player.companion.bonusType === "attack") bonus += player.companion.bonus;
       return bonus;
     }
     function getEffectiveMaxMana(){
-      let total = player.maxMana;
+      let total = player.maxMana + ((player.worldBuffs && player.worldBuffs.duration>0) ? player.worldBuffs.mana : 0);
       if(player.companion && player.companion.bonusType === "mana") total += player.companion.bonus;
       return total;
     }
     function getPlayerDefenseValue(){
-      let bonus = player.defense + getEquipmentBonus("defense") + player.temporaryDefenseBonus;
+      let bonus = player.defense + getEquipmentBonus("defense") + player.temporaryDefenseBonus + ((player.worldBuffs && player.worldBuffs.duration>0) ? player.worldBuffs.defense : 0);
       if(player.companion && player.companion.bonusType === "defense") bonus += player.companion.bonus;
       return bonus;
     }
@@ -1517,7 +1756,9 @@
     }
 
     function playerAttack(){
-      let dmg = Math.max(1, getPlayerAttackValue() - enemy.defense);
+      const roll = Math.floor(Math.random() * 20) + 1;
+      let base = getPlayerAttackValue() + roll;
+      let dmg = Math.max(1, base - enemy.defense);
       if(player.equipment.arma){
         const mult = getElementalMultiplier(player.equipment.arma.element, enemy.element);
         dmg = Math.max(1, Math.floor(dmg * mult));
@@ -1525,7 +1766,8 @@
         if(mult < 1) addLog("Desvantagem elemental! Seu ataque perdeu força.");
       }
       enemy.hp -= dmg;
-      addLog(`${player.name} causou ${dmg} de dano em ${enemy.name}.`);
+      lastRollInfo = {type:"Ataque", roll, base, damage:dmg};
+      addLog(`${player.name} rolou d20=${roll} e causou ${dmg} de dano em ${enemy.name}.`);
       if(enemy.hp <= 0) return winBattle();
       companionAction();
       if(enemy.hp <= 0) return winBattle();
@@ -1540,9 +1782,11 @@
 
     function useSkill(){
       let manaCost=0,dmg=0,name="";
-      if(player.classKey==="guerreiro"){ manaCost=6; dmg=Math.max(1,Math.floor((getPlayerAttackValue()*1.6)-enemy.defense)); name="Golpe Pesado";}
-      else if(player.classKey==="arqueiro"){ manaCost=8; dmg=Math.max(1,Math.floor((getPlayerAttackValue()*1.7)-enemy.defense)); name="Flecha Precisa";}
-      else { manaCost=12; dmg=Math.max(1,Math.floor((getPlayerAttackValue()*2.0)-enemy.defense)); name="Explosão Arcana";}
+      const roll = Math.floor(Math.random() * 20) + 1;
+      let base = 0;
+      if(player.classKey==="guerreiro"){ manaCost=6; base=Math.floor((getPlayerAttackValue()*1.6)+roll); dmg=Math.max(1,base-enemy.defense); name="Golpe Pesado";}
+      else if(player.classKey==="arqueiro"){ manaCost=8; base=Math.floor((getPlayerAttackValue()*1.7)+roll); dmg=Math.max(1,base-enemy.defense); name="Flecha Precisa";}
+      else { manaCost=12; base=Math.floor((getPlayerAttackValue()*2.0)+roll); dmg=Math.max(1,base-enemy.defense); name="Explosão Arcana";}
       if(player.mana < manaCost){ addLog("Mana insuficiente."); return render(); }
       if(player.equipment.arma){
         const mult = getElementalMultiplier(player.equipment.arma.element, enemy.element);
@@ -1552,7 +1796,8 @@
       }
       player.mana -= manaCost;
       enemy.hp -= dmg;
-      addLog(`${player.name} usou ${name} e causou ${dmg} de dano.`);
+      lastRollInfo = {type:name, roll, base, damage:dmg};
+      addLog(`${player.name} rolou d20=${roll}, usou ${name} e causou ${dmg} de dano.`);
       if(enemy.hp <= 0) return winBattle();
       companionAction();
       if(enemy.hp <= 0) return winBattle();
@@ -1564,22 +1809,28 @@
       if(!spell || !player.learnedSpells.includes(id)) return;
       if(player.mana < spell.manaCost){ addLog(`Mana insuficiente para usar ${spell.name}.`); return render(); }
       player.mana -= spell.manaCost;
+      const roll = Math.floor(Math.random() * 20) + 1;
       if(spell.type==="damage"){
-        let dmg=Math.max(1,Math.floor((getPlayerAttackValue()*(spell.power + (player.level * 0.08)))-enemy.defense));
+        let base=Math.floor((getPlayerAttackValue()*(spell.power + (player.level * 0.08))) + roll);
+        let dmg=Math.max(1,base-enemy.defense);
         dmg=applySpellElement(dmg, spell.element);
         enemy.hp -= dmg;
-        addLog(`${player.name} conjurou ${spell.name} e causou ${dmg} de dano.`);
+        lastRollInfo = {type:spell.name, roll, base, damage:dmg};
+        addLog(`${player.name} rolou d20=${roll}, conjurou ${spell.name} e causou ${dmg} de dano.`);
       }
       if(spell.type==="buff"){
         player.temporaryDefenseBonus += spell.defenseBuff;
-        addLog(`${player.name} conjurou ${spell.name} e ganhou +${spell.defenseBuff} de defesa temporária.`);
+        lastRollInfo = {type:spell.name, roll, base:spell.defenseBuff, damage:0};
+        addLog(`${player.name} rolou d20=${roll}, conjurou ${spell.name} e ganhou +${spell.defenseBuff} de defesa temporária.`);
       }
       if(spell.type==="drain"){
-        let dmg=Math.max(1,Math.floor((getPlayerAttackValue()*(spell.power + (player.level * 0.08)))-enemy.defense));
+        let base=Math.floor((getPlayerAttackValue()*(spell.power + (player.level * 0.08))) + roll);
+        let dmg=Math.max(1,base-enemy.defense);
         dmg=applySpellElement(dmg, spell.element);
         enemy.hp -= dmg;
         player.mana = Math.min(getEffectiveMaxMana(), player.mana + spell.manaRestore);
-        addLog(`${player.name} usou ${spell.name}, causou ${dmg} de dano e recuperou ${spell.manaRestore} de mana.`);
+        lastRollInfo = {type:spell.name, roll, base, damage:dmg};
+        addLog(`${player.name} rolou d20=${roll}, usou ${spell.name}, causou ${dmg} de dano e recuperou ${spell.manaRestore} de mana.`);
       }
       if(enemy.hp <= 0) return winBattle();
       companionAction();
@@ -1678,7 +1929,7 @@
 
     function runAway(){
       addLog(`${player.name} fugiu da batalha.`);
-      player.temporaryDefenseBonus = 0; battleActive = false; enemy = null; currentScreen = "casa";
+      player.temporaryDefenseBonus = 0; consumeWorldBuffBattle(); battleActive = false; enemy = null; currentScreen = "casa";
       saveGame(); render();
     }
 
@@ -1739,6 +1990,7 @@
       handleLevelUp();
       player.temporaryDefenseBonus = 0;
       player.hp = Math.max(1, Math.min(player.maxHp, player.hp));
+      consumeWorldBuffBattle();
       battleActive = false; enemy = null; currentScreen = "casa";
       saveGame(); render();
     }
@@ -2074,14 +2326,6 @@
     function manualSave(){ saveGame(); addLog("Progresso salvo com sucesso."); render(); }
 
     render();
-  </script>
-
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js').catch(console.error);
-      });
-    }
   </script>
 </body>
 </html>
