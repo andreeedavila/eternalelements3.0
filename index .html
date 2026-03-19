@@ -1,0 +1,2367 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>Eternal Elements Mobile v7</title>
+  <style>
+    :root{
+      --bg:#0f172a; --panel:#1e293b; --panel-2:#111827; --border:#334155; --text:#e2e8f0; --muted:#94a3b8;
+      --gold:#facc15; --btn:#334155; --btn2:#1f2937; --danger:#7f1d1d; --ok:#14532d;
+      --fire-bg:#7f1d1d; --fire-tx:#fecaca; --water-bg:#1e3a8a; --water-tx:#bfdbfe; --earth-bg:#3f6212; --earth-tx:#d9f99d;
+      --rank-bg:#581c87; --rank-tx:#f3e8ff;
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
+    body{min-height:100vh;padding:12px 12px 12px 100px + env(safe-area-inset-bottom))}
+    .app{max-width:760px;margin:0 auto}
+    .title{text-align:center;font-size:clamp(24px,6vw,34px);font-weight:800;margin:8px 0 16px}
+    .panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 8px 20px rgba(0,0,0,.18)}
+    .subpanel{background:var(--panel-2);border:1px solid var(--border);border-radius:14px;padding:12px;margin-top:10px}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .col{flex:1 1 320px;min-width:0}
+    button{background:var(--btn);color:#fff;border:none;border-radius:12px;padding:12px 14px;min-height:46px;font-weight:700;cursor:pointer;margin:6px 6px 0 0;font-size:14px}
+    button:hover{filter:brightness(1.08)}
+    button.secondary{background:var(--btn2)} button.danger{background:var(--danger)} button.success{background:var(--ok)} button.gold{background:#7c5a00}
+    button.full{width:100%;margin-right:0}
+    input,select{width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:#0b1220;color:#fff;margin-top:6px;margin-bottom:12px;font-size:16px;min-height:46px}
+    p{margin:6px 0}.small{font-size:12px;color:var(--muted)}
+    .stats-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:8px}
+    .stat{background:#0b1220;border:1px solid var(--border);border-radius:12px;padding:10px}
+    .stat .label{font-size:12px;color:var(--muted)} .stat .value{font-size:18px;font-weight:800;margin-top:4px}
+    .badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700;margin-left:6px;vertical-align:middle}
+    .fire{background:var(--fire-bg);color:var(--fire-tx)} .water{background:var(--water-bg);color:var(--water-tx)} .earth{background:var(--earth-bg);color:var(--earth-tx)}
+    .rank{background:var(--rank-bg);color:var(--rank-tx)}
+    .item,.map-card,.node-card,.rank-card,.skill-card,.recipe-card{padding:12px;border:1px solid var(--border);border-radius:14px;background:#0b1220;margin-bottom:10px}
+    .map-card.current-map,.node-card.active-node,.rank-card.active-node{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}
+    .resource{display:inline-block;margin:4px 6px 0 0;padding:6px 10px;border-radius:999px;background:#0b1220;border:1px solid var(--border);font-size:13px}
+    .slot-label{color:#93c5fd;font-weight:700;text-transform:capitalize}.empty{color:var(--muted);font-style:italic}
+    .rarity-comum{color:#e2e8f0}.rarity-raro{color:#60a5fa}.rarity-epico{color:#c084fc}.rarity-lendario{color:#facc15;text-shadow:0 0 8px rgba(250,204,21,.18)}
+    .highlight{color:var(--gold);font-weight:700}.good{color:#22c55e;font-weight:700}.bad{color:#ef4444;font-weight:700}.pill{display:inline-block;background:#0b1220;border:1px solid var(--border);border-radius:999px;padding:4px 8px;font-size:12px;margin-right:6px}
+    .hero-line{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+    .log-box{max-height:260px;overflow:auto}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .grid-3{display:grid;grid-template-columns:1fr;gap:10px}
+    .pixel-map{
+      position:relative;
+      border:3px solid #475569;
+      border-radius:14px;
+      padding:14px;
+      min-height:360px;
+      overflow:hidden;
+      image-rendering: pixelated;
+      background:#132033;
+      box-shadow:0 10px 28px rgba(0,0,0,.25), inset 0 0 0 2px rgba(255,255,255,.03);
+    }
+    .pixel-map.floresta{
+      background:
+        radial-gradient(circle at 15% 20%, rgba(34,197,94,.18) 0 10%, transparent 11%),
+        radial-gradient(circle at 72% 22%, rgba(34,197,94,.16) 0 8%, transparent 9%),
+        radial-gradient(circle at 58% 72%, rgba(34,197,94,.18) 0 9%, transparent 10%),
+        linear-gradient(180deg, #25452d 0%, #1a2f1f 55%, #15281b 100%);
+    }
+    .pixel-map.reino{
+      background:
+        linear-gradient(180deg, #364152 0%, #27303c 55%, #1b2230 100%);
+    }
+    .pixel-map.lago{
+      background:
+        radial-gradient(circle at 70% 25%, rgba(56,189,248,.20) 0 14%, transparent 15%),
+        radial-gradient(circle at 24% 68%, rgba(56,189,248,.14) 0 10%, transparent 11%),
+        linear-gradient(180deg, #143a53 0%, #102b3c 45%, #0d2230 100%);
+    }
+    .pixel-map-grid{
+      position:absolute;inset:0;opacity:.15;
+      background-image:
+        linear-gradient(to right, #94a3b8 1px, transparent 1px),
+        linear-gradient(to bottom, #94a3b8 1px, transparent 1px);
+      background-size:16px 16px;
+      pointer-events:none;
+    }
+    .pixel-decor{position:absolute;pointer-events:none;opacity:.95}
+    .pixel-tree{width:18px;height:18px;background:#166534;border:2px solid #14532d;box-shadow:0 10px 0 -4px #3f3f46}
+    .pixel-rock{width:16px;height:14px;background:#94a3b8;border:2px solid #64748b}
+    .pixel-water{width:26px;height:18px;background:#0ea5e9;border:2px solid #0284c7}
+    .pixel-castle{width:22px;height:20px;background:#cbd5e1;border:2px solid #94a3b8;box-shadow:8px 0 0 -2px #cbd5e1, -8px 0 0 -2px #cbd5e1}
+    .pixel-path{
+      animation: shimmer 3s infinite;
+      position:absolute;
+      height:10px;
+      background:#b0895a;
+      border:2px solid #7c5b3c;
+      border-radius:0;
+      box-shadow:0 0 0 2px rgba(0,0,0,.12) inset;
+    }
+    .pixel-node{
+      position:absolute;
+      width:108px;
+      min-height:74px;
+      padding:8px;
+      background:#1e293b;
+      border:3px solid #cbd5e1;
+      border-radius:0;
+      box-shadow:4px 4px 0 #0f172a;
+      cursor:pointer;
+      transition:transform .08s ease, box-shadow .12s ease;
+      animation: nodeFloat 2.8s ease-in-out infinite;
+    }
+    .pixel-node:hover{transform:translate(-1px,-1px) scale(1.01)}
+    .pixel-node.active{border-color:#facc15;box-shadow:0 0 0 2px #facc15, 4px 4px 0 #0f172a}
+    .pixel-node.boss{
+      border-color:#ef4444;
+      background:#31111b;
+      box-shadow:0 0 0 2px #ef4444, 4px 4px 0 #0f172a;
+      animation: bossPulse 1.6s ease-in-out infinite;
+    }
+    .pixel-node .name{font-size:12px;font-weight:800;line-height:1.2}
+    .pixel-node .type{font-size:10px;color:#cbd5e1;margin-top:4px}
+    .pixel-node .badge-mini{
+      display:inline-block;margin-top:5px;padding:2px 6px;font-size:10px;
+      border:1px solid #475569;background:#0f172a
+    }
+    .pixel-node.boss .badge-mini{border-color:#ef4444}
+    .pixel-node.locked{opacity:.72; filter:saturate(.7)}
+    .pixel-boss-legend{
+      display:inline-block;
+      margin-right:8px;
+      padding:4px 8px;
+      border:1px solid #ef4444;
+      background:#31111b;
+      font-size:11px;
+    }
+    @keyframes bossPulse{
+      0%,100%{transform:translateY(0); box-shadow:0 0 0 2px #ef4444, 4px 4px 0 #0f172a}
+      50%{transform:translateY(-2px); box-shadow:0 0 0 3px #f87171, 4px 4px 0 #0f172a}
+    }
+    @keyframes nodeFloat{
+      0%,100%{transform:translateY(0)}
+      50%{transform:translateY(-2px)}
+    }
+    @keyframes shimmer{
+      0%{opacity:.35}
+      50%{opacity:.8}
+      100%{opacity:.35}
+    }
+    .nav{position:fixed;top:0;bottom:0;left:0;width:90px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:rgba(15,23,42,.96);backdrop-filter:blur(8px);border-top:1px solid var(--border);z-index:30}
+    .nav-grid{display:flex;flex-direction:column;gap:8px;height:100%}
+    .nav button{margin:0;min-height:52px;border-radius:14px;padding:8px;font-size:12px}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="title">🔥 Eternal Elements 🌊</div>
+    <div id="app"></div>
+  </div>
+
+  <button id="menuToggle" onclick="toggleMenu()" style="display:none; position:fixed; top:12px; left:12px; z-index:50; background:#1e293b; border:1px solid #475569; border-radius:12px; padding:10px 12px; font-weight:700;">⚙ AÇÕES</button>
+  <div id="menuDrawer" style="display:none; position:fixed; top:56px; left:12px; z-index:49; width:220px; background:#0f172a; border:1px solid #475569; border-radius:14px; padding:10px; box-shadow:0 12px 28px rgba(0,0,0,.35);">
+    <button class="full" onclick="goTab('casa'); closeMenu();">Casa</button>
+    <button class="full" onclick="goTab('world'); closeMenu();">Mundo</button>
+    <button class="full" onclick="goTab('merchant'); closeMenu();">Loja</button>
+    <button class="full" onclick="goTab('craft'); closeMenu();">Craft</button>
+    <button class="full" onclick="goTab('elder'); closeMenu();">Ancião</button>
+    <button class="full" onclick="goTab('mine'); closeMenu();">Mineração</button>
+    <button class="full" onclick="goTab('inn'); closeMenu();">Estalagem</button>
+    <button class="full" onclick="goTab('quests'); closeMenu();">Quests</button>
+    <button class="full" onclick="goTab('economy'); closeMenu();">Economia</button>
+    <button class="full" onclick="goTab('version'); closeMenu();">Versão</button>
+    <button class="full" onclick="goTab('save'); closeMenu();">Salvar</button>
+  </div>
+
+  <script>
+    const ELEMENTS = ["Fogo","Água","Terra"];
+    const EQUIPMENT_SLOTS = ["elmo","arma","luvas","armadura","calcas","sapatos"];
+    const SAVE_KEY = "eternal_elements_mobile_v7";
+    const SAVE_VERSION = 3;
+    const MAPS = {
+      Floresta:{description:"Monstros ligados à Terra aparecem com mais frequência. Materiais de Terra são mais abundantes.", favoredElement:"Terra", hpMultiplier:1.05, xpMultiplier:1.00, goldMultiplier:1.00, materialBonus:{Terra:1}, difficulty:"Baixa", recommendedLevel:"1+", boss:{name:"Ent Supremo", element:"Terra", unlockClears:5}},
+      Reino:{description:"Área mais rica e disputada. Combates rendem mais ouro e inimigos costumam ser mais organizados.", favoredElement:"Fogo", hpMultiplier:1.10, xpMultiplier:1.00, goldMultiplier:1.20, materialBonus:{Fogo:1}, difficulty:"Média", recommendedLevel:"3+", boss:{name:"Guardião Carmesim", element:"Fogo", unlockClears:5}},
+      Lago:{description:"Região tomada por criaturas de Água. Combates aqui rendem mais experiência e fluxo mágico.", favoredElement:"Água", hpMultiplier:1.00, xpMultiplier:1.15, goldMultiplier:1.00, materialBonus:{Água:1}, difficulty:"Média", recommendedLevel:"4+", boss:{name:"Serpente do Abismo", element:"Água", unlockClears:5}}
+    };
+    const MAP_NODES = {
+      Floresta:[{id:"bosque_inicial",name:"Bosque Inicial",type:"combate",desc:"Área segura para primeiros confrontos."},{id:"clareira_mineral",name:"Clareira Mineral",type:"mineracao",desc:"Zona rica em fragmentos de Terra."},{id:"tronco_antigo",name:"Tronco Antigo",type:"evento",desc:"Local reservado para eventos futuros."}],
+      Reino:[{id:"portao_real",name:"Portão Real",type:"combate",desc:"Entrada do Reino com guardiões agressivos."},{id:"forja_real",name:"Forja Real",type:"mineracao",desc:"Mineração de fragmentos ígneos e metais."},{id:"praca_central",name:"Praça Central",type:"evento",desc:"Reservado para quests e NPCs."}],
+      Lago:[{id:"margem_serena",name:"Margem Serena",type:"combate",desc:"Criaturas aquáticas patrulham a margem."},{id:"caverna_umida",name:"Caverna Úmida",type:"mineracao",desc:"Fonte de essências aquáticas."},{id:"ilha_funda",name:"Ilha Funda",type:"evento",desc:"Espaço planejado para chefe secreto."}]
+    };
+    const SPELL_BOOK = [
+      {id:"chama_vital",name:"Chama Vital",reqLevel:1,auraCost:2,manaCost:14,element:"Fogo",description:"Explosão elemental focada em dano.",type:"damage",power:1.9},
+      {id:"onda_arcana",name:"Onda Arcana",reqLevel:1,auraCost:2,manaCost:14,element:"Água",description:"Ataque mágico preciso com alto dano.",type:"damage",power:2.0},
+      {id:"pele_de_pedra",name:"Pele de Pedra",reqLevel:2,auraCost:3,manaCost:12,element:"Terra",description:"Aumenta a defesa do jogador durante a batalha.",type:"buff",defenseBuff:8},
+      {id:"sifao_arcano",name:"Sifão Arcano",reqLevel:3,auraCost:4,manaCost:16,element:"Água",description:"Causa dano e recupera mana.",type:"drain",power:1.5,manaRestore:10},
+      {id:"tempestade_ignea",name:"Tempestade Ígnea",reqLevel:4,auraCost:6,manaCost:24,element:"Fogo",description:"Magia avançada de dano em chamas.",type:"damage",power:2.8},
+      {id:"maremoto_arcano",name:"Maremoto Arcano",reqLevel:5,auraCost:7,manaCost:26,element:"Água",description:"Rajada massiva de água com grande dano.",type:"damage",power:3.0},
+      {id:"fortaleza_da_terra",name:"Fortaleza da Terra",reqLevel:6,auraCost:8,manaCost:20,element:"Terra",description:"Grande reforço defensivo durante a batalha.",type:"buff",defenseBuff:16}
+    ];
+    const POTION_SHOP = {
+      heal: [
+        {id:"heal_frasco", name:"Frasco de Cura", price:20, amount:1, heal:40},
+        {id:"heal_calice", name:"Cálice de Cura", price:45, amount:1, heal:85},
+        {id:"heal_garrafa", name:"Garrafa de Cura", price:80, amount:1, heal:150}
+      ],
+      mana: [
+        {id:"mana_frasco", name:"Frasco de Mana", price:25, amount:1, mana:30},
+        {id:"mana_calice", name:"Cálice de Mana", price:55, amount:1, mana:70},
+        {id:"mana_garrafa", name:"Garrafa de Mana", price:95, amount:1, mana:130}
+      ]
+    };
+    const COMPANIONS = [
+      {id:"lobo_rubro", name:"Lobo Rubro", element:"Fogo", price:180, bonusType:"attack", bonus:4, skill:"Mordida Flamejante"},
+      {id:"coruja_mistica", name:"Coruja Mística", element:"Água", price:210, bonusType:"mana", bonus:20, skill:"Névoa Restauradora"},
+      {id:"urso_terreo", name:"Urso Térreo", element:"Terra", price:240, bonusType:"defense", bonus:5, skill:"Pele Rochosa"}
+    ];
+    const CRAFT_RECIPES = [
+      {id:"arma_fogo",name:"Arma Flamejante Forjada",slot:"arma",element:"Fogo",material:"Fogo",cost:5,statType:"attack",bonus:7,rarity:"Raro"},
+      {id:"armadura_terra",name:"Armadura do Vale Forjada",slot:"armadura",element:"Terra",material:"Terra",cost:5,statType:"defense",bonus:7,rarity:"Raro"},
+      {id:"elmo_agua",name:"Elmo das Marés Forjado",slot:"elmo",element:"Água",material:"Água",cost:5,statType:"defense",bonus:6,rarity:"Raro"}
+    ];
+    const BATTLE_RANKS = {
+      random:{label:"Aleatório",multiplier:null,bonusLoot:0,minLevel:1},
+      Lacaio:{label:"Lacaio",multiplier:1,bonusLoot:0,minLevel:1},
+      Comandante:{label:"Comandante",multiplier:1.4,bonusLoot:1,minLevel:3},
+      General:{label:"General",multiplier:1.9,bonusLoot:2,minLevel:5},
+      Boss:{label:"Boss",multiplier:2.8,bonusLoot:4,minLevel:1}
+    };
+
+    let player = null, enemy = null, battleActive = false, battleLog = [], currentScreen = "casa", selectedBattleRank = "random";
+    const GAME_VERSION = "v40";
+    let lastRollInfo = {type:"-", roll:0, base:0, damage:0};
+    function toggleMenu(){
+      const d = document.getElementById("menuDrawer");
+      if(!d) return;
+      d.style.display = d.style.display === "none" || !d.style.display ? "block" : "none";
+    }
+    function closeMenu(){
+      const d = document.getElementById("menuDrawer");
+      if(d) d.style.display = "none";
+    }
+
+    
+    function getVersionNotes(){
+      return [
+        {version:"v38", notes:[
+          "Painel de versão agora inclui changelog completo das versões recentes.",
+          "Eventos do mapa receberam consequências extras: buffs, essências, emboscadas e batalhas ocasionais.",
+          "Essências e bênçãos do mapa agora podem gerar efeitos temporários para as próximas batalhas."
+        ]},
+        {version:"v37", notes:[
+          "Aba de versão adicionada no menu AÇÕES.",
+          "Painel mostra a versão atual do jogo.",
+          "Histórico mostra o que entrou da versão anterior para a atual."
+        ]},
+        {version:"v36", notes:[
+          "Barras líquidas corrigidas na batalha.",
+          "Barras líquidas adicionadas também na CASA.",
+          "Barra de vida do inimigo passou a usar o mesmo estilo."
+        ]},
+        {version:"v35", notes:[
+          "Primeira implementação das barras com efeito de líquido.",
+          "Animação de onda para HP e mana.",
+          "Visual de combate ficou mais próximo de um RPG."
+        ]},
+        {version:"v34", notes:[
+          "Crítico e falha no d20.",
+          "IA inimiga melhorada.",
+          "Status elementais no combate."
+        ]},
+        {version:"v33", notes:[
+          "Base estável restaurada.",
+          "d20 mínimo no combate.",
+          "Botão renomeado para AÇÕES."
+        ]},
+        {version:"v32", notes:[
+          "Tentativa de correção da batalha com painel de d20.",
+          "Ajustes na renderização da tela de combate."
+        ]},
+        {version:"v31", notes:[
+          "Retorno da interface anterior de inventário, atributos e slots.",
+          "Primeira volta do d20 no combate."
+        ]},
+        {version:"v30", notes:[
+          "Restauração da interface visual funcional.",
+          "Menu passou a exibir o nome AÇÕES."
+        ]},
+        {version:"v29", notes:[
+          "Painéis flutuantes para equipamentos, inventário e atributos foram testados.",
+          "Rolagem d20 expandida para ataque, habilidade e magia."
+        ]},
+        {version:"v28", notes:[
+          "Primeiro protótipo visual do personagem e dos equipamentos.",
+          "Inventário flutuante experimental."
+        ]},
+        {version:"v27", notes:[
+          "Atributos corrigidos no level up.",
+          "Sistema de status e bosses por mapa consolidado.",
+          "Economia avançada, companheiros evolutivos e eventos por bioma."
+        ]}
+      ];
+    }
+
+
+    function renderVersionPanel(){
+      const versions = getVersionNotes();
+      document.getElementById("app").innerHTML = `
+        <div class="panel">
+          <div style="font-size:20px;font-weight:900;margin-bottom:10px;">Versão do jogo</div>
+          <p><strong>Versão atual:</strong> ${GAME_VERSION}</p>
+          <p class="small">Este painel registra o que foi adicionado de uma versão para a próxima. As entradas abaixo cobrem a linha estável recente do projeto.</p>
+        </div>
+        ${versions.map(v => `
+          <div class="panel">
+            <div style="font-size:18px;font-weight:800;margin-bottom:8px;">${v.version}</div>
+            ${v.notes.map(n => `<p class="small">• ${n}</p>`).join("")}
+          </div>
+        `).join("")}
+      `;
+    }
+
+    function getElementClass(element){ if(element==="Fogo") return "fire"; if(element==="Água") return "water"; return "earth"; }
+    function getRarityClass(r){ if(r==="Raro") return "rarity-raro"; if(r==="Épico") return "rarity-epico"; if(r==="Lendário" || r==="Mítico") return "rarity-lendario"; return "rarity-comum"; }
+    function renderLiquidBar(type, current, maximum){
+      const pct = Math.max(0, Math.min(100, Math.floor((current / maximum) * 100)));
+      return `<div class="liquid-meter"><div class="liquid-fill ${type}" style="width:${pct}%"><div class="liquid-wave"></div></div><div class="liquid-label">${current}/${maximum}</div></div>`;
+    }
+    
+    function companionAction(){
+      if(!player || !player.companion || !battleActive || !enemy) return false;
+      const roll = Math.random();
+      const lvl = player.companion.level || 1;
+
+      if(player.companion.id === "lobo_rubro" && roll < 0.35){
+        const dmg = 8 + player.level + lvl + Math.floor((player.companion.bonus||0)/2);
+        enemy.hp -= dmg;
+        if(Math.random() < 0.25) {
+          enemy.statuses.queimadura = Math.max(enemy.statuses.queimadura, 2);
+          addLog("🔥 O Lobo Rubro aplicou queimadura.");
+        }
+        addLog(`${player.companion.name} usou ${player.companion.skill} e causou ${dmg} de dano.`);
+        return true;
+      }
+      if(player.companion.id === "coruja_mistica" && roll < 0.30){
+        const mana = 12 + Math.floor(player.level/2) + lvl;
+        player.mana = Math.min(getEffectiveMaxMana(), player.mana + mana);
+        addLog(`${player.companion.name} usou ${player.companion.skill} e restaurou ${mana} de mana.`);
+        return true;
+      }
+      if(player.companion.id === "urso_terreo" && roll < 0.28){
+        player.temporaryDefenseBonus += 4 + Math.floor(lvl/2);
+        addLog(`${player.companion.name} usou ${player.companion.skill} e reforçou sua defesa.`);
+        return true;
+      }
+      return false;
+    }
+
+    function formatSlotName(slot){ return {elmo:"Elmo",arma:"Arma",luvas:"Luvas",armadura:"Armadura",calcas:"Calças",sapatos:"Sapatos"}[slot] || slot; }
+    function getClassData(cls){ return {guerreiro:{name:"Guerreiro",maxHp:140,attack:16,defense:10,maxMana:20},arqueiro:{name:"Arqueiro",maxHp:110,attack:20,defense:7,maxMana:30},mago:{name:"Mago",maxHp:85,attack:24,defense:4,maxMana:60}}[cls]; }
+    function ensurePlayerState(){
+      if(!player) return;
+      if(!player.healPotions) player.healPotions = {frasco: player.potions || 0, calice: 0, garrafa: 0};
+      if(!player.manaPotionStock) player.manaPotionStock = {frasco: player.manaPotions || 0, calice: 0, garrafa: 0};
+      if(typeof player.potions !== "number") player.potions = player.healPotions.frasco || 0;
+      if(typeof player.manaPotions !== "number") player.manaPotions = player.manaPotionStock.frasco || 0;
+      if(!player.innUniqueQuests){
+        player.innUniqueQuests = [
+          {id:"inn1", title:"Entrega da Estalagem", desc:"Venda 3 itens para os hóspedes da estalagem.", progress:0, target:3, rewardGold:90, rewardAura:1, claimed:false},
+          {id:"inn2", title:"Colecionador Noturno", desc:"Mine 6 recursos e retorne à estalagem.", progress:0, target:6, rewardGold:70, rewardAura:1, claimed:false}
+        ];
+      }
+      if(!player.quests){
+        player.quests = [
+          {id:"q1",type:"global",desc:"Derrote 5 inimigos",progress:0,target:5,rewardGold:50,rewardAura:0,done:false},
+          {id:"q2",type:"global",desc:"Mine 10 recursos",progress:0,target:10,rewardGold:40,rewardAura:0,done:false},
+          {id:"q3",type:"global",desc:"Forje 2 itens",progress:0,target:2,rewardGold:60,rewardAura:1,done:false},
+          {id:"map_floresta",type:"map",map:"Floresta",desc:"Derrote 3 inimigos na Floresta",progress:0,target:3,rewardGold:55,rewardAura:1,done:false},
+          {id:"map_reino",type:"map",map:"Reino",desc:"Derrote 3 inimigos no Reino",progress:0,target:3,rewardGold:70,rewardAura:1,done:false},
+          {id:"map_lago",type:"map",map:"Lago",desc:"Derrote 3 inimigos no Lago",progress:0,target:3,rewardGold:70,rewardAura:1,done:false},
+          {id:"boss_floresta",type:"boss",map:"Floresta",desc:"Derrote o boss da Floresta",progress:0,target:1,rewardGold:120,rewardAura:2,done:false},
+          {id:"boss_reino",type:"boss",map:"Reino",desc:"Derrote o boss do Reino",progress:0,target:1,rewardGold:150,rewardAura:2,done:false},
+          {id:"boss_lago",type:"boss",map:"Lago",desc:"Derrote o boss do Lago",progress:0,target:1,rewardGold:150,rewardAura:2,done:false}
+        ];
+      }
+      if(!player.economy){
+        player.economy = {goldEarned:0,goldSpent:0,itemsSold:0,itemsCrafted:0,itemsRefined:0,battlesWon:0,battlesLost:0,miningYield:0};
+      }
+      if(!player.worldProgress){
+        player.worldProgress = {
+          Floresta:{clears:0,bossUnlocked:false,bossDefeated:false,mines:0},
+          Reino:{clears:0,bossUnlocked:false,bossDefeated:false,mines:0},
+          Lago:{clears:0,bossUnlocked:false,bossDefeated:false,mines:0}
+        };
+      }
+      ["Floresta","Reino","Lago"].forEach(map=>{
+        if(!player.worldProgress[map]) player.worldProgress[map] = {clears:0,bossUnlocked:false,bossDefeated:false,mines:0};
+      });
+      if(!player.equipment) player.equipment = {elmo:null,arma:null,luvas:null,armadura:null,calcas:null,sapatos:null};
+      if(!player.materials) player.materials = {Fogo:0,Água:0,Terra:0};
+      if(!player.inventory) player.inventory = [];
+      if(!player.learnedSpells) player.learnedSpells = [];
+      if(!player.currentMap) player.currentMap = "Floresta";
+      if(player.eventChoice === undefined) player.eventChoice = null;
+      if(!player.worldBuffs) player.worldBuffs = {attack:0,defense:0,mana:0,luck:0,duration:0};
+      if(!player.attributes) player.attributes = {forca:0,resistencia:0,inteligencia:0,points:0};
+      if(typeof player.attributes.points !== 'number') player.attributes.points = 0;
+      if(!player.attributes) player.attributes = {forca:0,resistencia:0,inteligencia:0,points:0};
+      if(!player.homeCraftStock) player.homeCraftStock = {healEssence:0,manaEssence:0};
+      if(!player.currentNode) player.currentNode = MAP_NODES[player.currentMap][0].id;
+      if(typeof player.temporaryDefenseBonus !== "number") player.temporaryDefenseBonus = 0;
+    }
+    function ensureEconomy(){
+      if(!player.economy){
+        player.economy = {goldEarned:0,goldSpent:0,itemsSold:0,itemsCrafted:0,itemsRefined:0,battlesWon:0,battlesLost:0,miningYield:0};
+      }
+    }
+    function getCraftPreviewSellValue(recipe){
+      if(!player) return recipe.bonus * 5;
+      const valueBonus = recipe.bonus + Math.floor(player.level/2);
+      return valueBonus * 5;
+    }
+    function getMarketPressure(){
+      ensureEconomy();
+      return Math.max(0.85, 1 + (player.economy.itemsSold * 0.01) + (player.economy.itemsRefined * 0.006) - (player.economy.battlesLost * 0.01));
+    }
+
+    function getDynamicSellValue(item){
+      const pressure = getMarketPressure();
+      return Math.max(1, Math.floor((item.sellValue || 1) * pressure));
+    }
+
+    function getNetGold(){
+      ensureEconomy();
+      return player.economy.goldEarned - player.economy.goldSpent;
+    }
+    function getItemComparisonText(item){
+      const equipped = player.equipment[item.slot];
+      if(!equipped){
+        return '<span class="good">Sem item equipado neste slot • ganho direto</span>';
+      }
+      const diff = item.bonus - equipped.bonus;
+      if(diff > 0) return `<span class="good">Melhora de +${diff} no slot ${formatSlotName(item.slot)}</span>`;
+      if(diff < 0) return `<span class="bad">Piora de ${diff} no slot ${formatSlotName(item.slot)}</span>`;
+      return `Mesmo poder do item equipado em ${formatSlotName(item.slot)}`;
+    }
+    function getCraftComparisonText(recipe){
+      if(!player) return '';
+      const previewBonus = recipe.bonus + Math.floor(player.level/2);
+      const equipped = player.equipment[recipe.slot];
+      if(!equipped){
+        return '<span class="good">Sem item equipado neste slot • craft entra forte</span>';
+      }
+      const diff = previewBonus - equipped.bonus;
+      if(diff > 0) return `<span class="good">Se forjado agora: melhora de +${diff} no slot ${formatSlotName(recipe.slot)}</span>`;
+      if(diff < 0) return `<span class="bad">Se forjado agora: piora de ${diff} no slot ${formatSlotName(recipe.slot)}</span>`;
+      return `Se forjado agora: mesmo poder do item equipado em ${formatSlotName(recipe.slot)}`;
+    }
+    function getCraftPreviewSellValue(recipe){
+      if(!player) return recipe.bonus * 5;
+      const valueBonus = recipe.bonus + Math.floor(player.level/2);
+      return valueBonus * 5;
+    }
+
+    function render(){
+      const mt = document.getElementById("menuToggle");
+      const md = document.getElementById("menuDrawer");
+      if(mt) mt.style.display = player && !battleActive ? "block" : "none";
+      if(md && (!player || battleActive)) md.style.display = "none";
+      if(!player) return renderCreateCharacter();
+      ensurePlayerState();
+      ensurePlayerState();
+      if(battleActive) return renderBattle();
+      if(currentScreen==="merchant") return renderMerchant();
+      if(currentScreen==="elder") return renderElder();
+      if(currentScreen==="world") return renderWorld();
+      if(currentScreen==="craft") return renderCraft();
+      if(currentScreen==="mine") return renderMining();
+      if(currentScreen==="inn") return renderInn();
+      if(currentScreen==="save") return renderSaveCenter();
+      if(currentScreen==="economy") return renderEconomy();
+      if(currentScreen==="version") return renderVersionPanel();
+      if(currentScreen==="quests") return renderQuests();
+      if(currentScreen==="event") return renderEventEncounter();
+      if(currentScreen==="more") return renderMore();
+      renderCasa();
+    }
+
+    function renderCreateCharacter(){
+      document.getElementById("app").innerHTML = `
+        <div class="panel">
+          <div style="font-size:22px;font-weight:800;margin-bottom:10px;">Novo Jogo</div>
+          <label>Nome do personagem</label>
+          <input id="nameInput" placeholder="Digite o nome" />
+          <label>Gênero</label>
+          <select id="genderInput"><option value="Masculino">Masculino</option><option value="Feminino">Feminino</option></select>
+          <label>Classe</label>
+          <select id="classInput"><option value="guerreiro">Guerreiro</option><option value="arqueiro">Arqueiro</option><option value="mago">Mago</option></select>
+          <button class="full" onclick="createCharacter()">Criar personagem</button>
+          ${hasSaveGame() ? '<button class="secondary full" onclick="continueGame()">Continuar progresso</button>' : ""}
+          ${hasSaveGame() ? '<button class="danger full" onclick="resetSave()">Apagar save</button>' : ""}
+          <p class="small">Versão mobile padrão com save local, crafting, refino, mineração, boss por mapa e rotas estruturadas.</p>
+        </div>`;
+    }
+
+    function createCharacter(){
+      const name = document.getElementById("nameInput").value.trim() || "Herói";
+      const gender = document.getElementById("genderInput").value;
+      const cls = document.getElementById("classInput").value;
+      const data = getClassData(cls);
+      player = { version: SAVE_VERSION,
+        version:SAVE_VERSION,
+        name, gender, classKey:cls, className:data.name, level:1, xp:0, xpToNext:100, gold:0, aura:0,
+        maxHp:data.maxHp, hp:data.maxHp, attack:data.attack, defense:data.defense, maxMana:data.maxMana, mana:data.maxMana,
+        potions:3, manaPotions:2, healPotions:{frasco:3,calice:0,garrafa:0}, manaPotionStock:{frasco:2,calice:0,garrafa:0},
+        inventory:[], learnedSpells:[], temporaryDefenseBonus:0, currentMap:"Floresta",
+        companion:null,
+        attributes:{forca:0,resistencia:0,inteligencia:0,points:0},
+        homeCraftStock:{healEssence:0,manaEssence:0}, eventChoice:null, worldBuffs:{attack:0,defense:0,mana:0,luck:0,duration:0},
+        innUniqueQuests:[
+          {id:"inn1", title:"Entrega da Estalagem", desc:"Venda 3 itens para os hóspedes da estalagem.", progress:0, target:3, rewardGold:90, rewardAura:1, claimed:false},
+          {id:"inn2", title:"Colecionador Noturno", desc:"Mine 6 recursos e retorne à estalagem.", progress:0, target:6, rewardGold:70, rewardAura:1, claimed:false}
+        ],
+        currentNode:MAP_NODES["Floresta"][0].id, materials:{Fogo:0,Água:0,Terra:0},
+        equipment:{elmo:null,arma:null,luvas:null,armadura:null,calcas:null,sapatos:null},
+        worldProgress:{Floresta:{clears:0,bossUnlocked:false,bossDefeated:false,mines:0},Reino:{clears:0,bossUnlocked:false,bossDefeated:false,mines:0},Lago:{clears:0,bossUnlocked:false,bossDefeated:false,mines:0}},
+        economy:{goldEarned:0,goldSpent:0,itemsSold:0,itemsCrafted:0,itemsRefined:0,battlesWon:0,battlesLost:0,miningYield:0},
+        quests:[
+          {id:"q1",type:"global",desc:"Derrote 5 inimigos",progress:0,target:5,rewardGold:50,rewardAura:0,done:false},
+          {id:"q2",type:"global",desc:"Mine 10 recursos",progress:0,target:10,rewardGold:40,rewardAura:0,done:false},
+          {id:"q3",type:"global",desc:"Forje 2 itens",progress:0,target:2,rewardGold:60,rewardAura:1,done:false},
+          {id:"map_floresta",type:"map",map:"Floresta",desc:"Derrote 3 inimigos na Floresta",progress:0,target:3,rewardGold:55,rewardAura:1,done:false},
+          {id:"map_reino",type:"map",map:"Reino",desc:"Derrote 3 inimigos no Reino",progress:0,target:3,rewardGold:70,rewardAura:1,done:false},
+          {id:"map_lago",type:"map",map:"Lago",desc:"Derrote 3 inimigos no Lago",progress:0,target:3,rewardGold:70,rewardAura:1,done:false},
+          {id:"boss_floresta",type:"boss",map:"Floresta",desc:"Derrote o boss da Floresta",progress:0,target:1,rewardGold:120,rewardAura:2,done:false},
+          {id:"boss_reino",type:"boss",map:"Reino",desc:"Derrote o boss do Reino",progress:0,target:1,rewardGold:150,rewardAura:2,done:false},
+          {id:"boss_lago",type:"boss",map:"Lago",desc:"Derrote o boss do Lago",progress:0,target:1,rewardGold:150,rewardAura:2,done:false}
+        ]
+      };
+      battleLog = [];
+      addLog(`Bem-vindo, ${player.name} o ${player.className}.`);
+      addLog(`Você iniciou sua jornada na ${player.currentMap}.`);
+      currentScreen = "casa";
+      ensurePlayerState();
+      saveGame(); render();
+    }
+
+    function renderCasa(){
+      const atkB = getEquipmentBonus("attack"), defB = getEquipmentBonus("defense"), mapData = MAPS[player.currentMap], progress = player.worldProgress[player.currentMap];
+      document.getElementById("app").innerHTML = `
+        <div class="panel">
+          <div class="hero-line">
+            <div><div style="font-size:22px;font-weight:800;">${player.name}</div><p class="small">${player.className} • ${player.gender} • ${player.currentMap}</p></div>
+            <div><span class="pill">Lvl ${player.level}</span><span class="pill">XP ${player.xp}/${player.xpToNext}</span></div>
+          </div>
+
+          <div class="subpanel">
+            <p><strong>❤️ HP</strong></p>
+            ${renderLiquidBar('hp', player.hp, player.maxHp)}
+            <p style="margin-top:10px;"><strong>🔵 Mana</strong></p>
+            ${renderLiquidBar('mana', player.mana, getEffectiveMaxMana())}
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat"><div class="label">Ataque</div><div class="value">${player.attack} ${atkB ? `<span class="highlight">+${atkB}</span>` : ""}</div></div>
+            <div class="stat"><div class="label">Defesa</div><div class="value">${player.defense} ${defB ? `<span class="highlight">+${defB}</span>` : ""}</div></div>
+            <div class="stat"><div class="label">Ouro</div><div class="value">${player.gold}</div></div>
+            <div class="stat"><div class="label">Auras</div><div class="value">${player.aura}</div></div>
+            <div class="stat"><div class="label">Cura</div><div class="value">${player.potions}</div></div>
+            <div class="stat"><div class="label">Mana Pot</div><div class="value">${player.manaPotions}</div></div>
+          </div>
+
+          <div class="subpanel" style="border:2px solid #facc15; box-shadow:0 0 0 1px #facc15 inset;">
+            <p style="font-size:12px; color:#facc15; font-weight:800; letter-spacing:.08em;">MAPA ATUAL</p>
+            <p style="font-size:24px; font-weight:900; margin:4px 0 8px;">${player.currentMap}</p>
+            <p class="small">${mapData.description}</p>
+            ${getActiveWorldBuffText() ? `<p class="small"><strong>${getActiveWorldBuffText()}</strong></p>` : ""}
+            <p class="small"><strong>Node atual:</strong> ${getCurrentNode().name}</p>
+            <p class="small"><strong>Vitórias no mapa:</strong> ${progress.clears} • <strong>Mineração:</strong> ${progress.mines}</p>
+            <p class="small"><strong>Boss:</strong> ${mapData.boss.name} • ${progress.bossUnlocked ? (progress.bossDefeated ? "Derrotado" : "Desbloqueado") : `Bloqueado (${mapData.boss.unlockClears - progress.clears} vitórias restantes)`}</p>
+            <button class="full" onclick="goTab('world')">Trocar / ver mapa</button>
+          </div>
+
+          <div class="subpanel">
+            <p><strong>Consumíveis na Casa</strong></p>
+            <p class="small">Você pode usar poções fora de combate para se preparar antes de sair.</p>
+            <div>
+              ${renderHomeConsumables()}
+            </div>
+          </div>
+
+          <div class="subpanel">
+            <p><strong>Seleção de batalha</strong></p>
+            <div class="grid-2">${renderBattleRanks()}</div>
+            <button class="success full" style="font-size:18px;padding:16px;background:#16a34a;" onclick="startBattle()">Iniciar batalha</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div style="font-size:18px;font-weight:800;margin-bottom:10px;">Equipamentos</div>
+          ${renderEquipment()}
+        </div>
+
+        <div class="panel">
+          <div style="font-size:18px;font-weight:800;margin-bottom:10px;">Materiais</div>
+          <span class="resource">🔥 Fogo: ${player.materials["Fogo"]}</span>
+          <span class="resource">🌊 Água: ${player.materials["Água"]}</span>
+          <span class="resource">🌍 Terra: ${player.materials["Terra"]}</span>
+        </div>
+
+        <div class="panel">
+          <div style="font-size:18px;font-weight:800;margin-bottom:10px;">Magias Aprendidas</div>
+          ${renderLearnedSpells()}
+        </div>
+
+        <div class="panel">
+          <div style="font-size:18px;font-weight:800;margin-bottom:10px;">Atributos</div>
+          ${renderAttributes()}
+        </div>
+
+        <div class="panel">
+          <div style="font-size:18px;font-weight:800;margin-bottom:10px;">Companheiro</div>
+          ${renderCompanion()}
+        </div>
+
+        <div class="panel">
+          <div style="font-size:18px;font-weight:800;margin-bottom:10px;">Laboratório da Casa</div>
+          ${renderHomePotions()}
+        </div>
+
+        <div class="panel">
+          <div style="font-size:18px;font-weight:800;margin-bottom:10px;">Inventário</div>
+          <p class="small">Protótipo visual futuro: inventário poderá virar um balão flutuante com ícones.</p>
+          ${renderInventory()}
+        </div>
+
+        <div class="panel">
+          <div style="font-size:18px;font-weight:800;margin-bottom:10px;">Registro</div>
+          <div class="log-box">${battleLog.slice(-16).map(msg => `<p>${msg}</p>`).join("")}</div>
+        </div>`;
+    }
+
+
+    
+    function createRandomEvent(){
+      const byMap = {
+        Floresta: [
+          {id:"espirito_floresta", title:"Espírito da Floresta", text:"Um espírito antigo oferece poder em troca de sacrifício.", choices:[
+            {label:"Aceitar o pacto", effect:"forest_pact"},
+            {label:"Pedir bênção", effect:"forest_bless"},
+            {label:"Recusar", effect:"leave"}
+          ]},
+          {id:"viajante_ferido", title:"Viajante Ferido", text:"Você encontra um viajante ferido na mata.", choices:[
+            {label:"Ajudar", effect:"heal_help"},
+            {label:"Cobrar pelo socorro", effect:"gold_help"},
+            {label:"Ignorar", effect:"leave"}
+          ]}
+        ],
+        Reino: [
+          {id:"tesouro_real", title:"Baú do Reino", text:"Uma caixa nobre aparece guardada por runas antigas.", choices:[
+            {label:"Abrir com cuidado", effect:"safe_chest"},
+            {label:"Forçar abertura", effect:"risky_chest"},
+            {label:"Ignorar", effect:"leave"}
+          ]},
+          {id:"soldado_perdido", title:"Soldado Perdido", text:"Um soldado do reino pede ajuda para retornar ao posto.", choices:[
+            {label:"Guiar o soldado", effect:"gold_help"},
+            {label:"Saquear suprimentos", effect:"risky_chest"},
+            {label:"Deixar para trás", effect:"leave"}
+          ]}
+        ],
+        Lago: [
+          {id:"fonte_arcana", title:"Fonte Arcana", text:"Uma fonte brilhante pulsa com energia elemental.", choices:[
+            {label:"Beber da fonte", effect:"mana_fountain"},
+            {label:"Coletar essência", effect:"essence_fountain"},
+            {label:"Não tocar", effect:"leave"}
+          ]},
+          {id:"eco_abissal", title:"Eco Abissal", text:"Você ouve uma canção no lago profundo.", choices:[
+            {label:"Seguir a voz", effect:"lake_song"},
+            {label:"Resistir à tentação", effect:"forest_bless"},
+            {label:"Ir embora", effect:"leave"}
+          ]}
+        ]
+      };
+      const events = byMap[player.currentMap] || [];
+      return events[Math.floor(Math.random() * events.length)];
+    }
+
+
+    function renderEventEncounter(){
+      const ev = player.eventChoice;
+      if(!ev){
+        currentScreen = "world";
+        return render();
+      }
+      document.getElementById("app").innerHTML = `
+        <div class="panel">
+          <div style="font-size:20px;font-weight:900;margin-bottom:10px;">${ev.title}</div>
+          <p class="small">${ev.text}</p>
+          ${ev.choices.map((c, i) => `<button class="full" onclick="resolveEventChoice(${i})">${c.label}</button>`).join("")}
+          <button class="secondary full" onclick="cancelEvent()">Voltar</button>
+        </div>
+      `;
+    }
+
+    function cancelEvent(){
+      player.eventChoice = null;
+      currentScreen = "world";
+      saveGame();
+      render();
+    }
+
+    function resolveEventChoice(index){
+      const ev = player.eventChoice;
+      if(!ev || !ev.choices[index]) return;
+      const effect = ev.choices[index].effect;
+      if(effect === "heal_help"){
+        player.hp = Math.min(player.maxHp, player.hp + 35);
+        player.aura += 1;
+        addLog("Você ajudou o viajante, recuperou vida e ganhou 1 aura.");
+        if(Math.random() < 0.25){
+          addLog("Bandidos viram a cena e iniciaram uma emboscada!");
+          player.eventChoice = null;
+          currentScreen = "world";
+          saveGame();
+          startBattle();
+          return;
+        }
+      } else if(effect === "gold_help"){
+        player.gold += 35;
+        ensureEconomy();
+        player.economy.goldEarned += 35;
+        player.worldBuffs.luck = 0;
+        addLog("Você cobrou pelo socorro e recebeu 35 ouro.");
+      } else if(effect === "safe_chest"){
+        player.gold += 25;
+        player.homeCraftStock.healEssence += 1;
+        ensureEconomy();
+        player.economy.goldEarned += 25;
+        if(Math.random() < 0.3){
+          player.healPotions.frasco += 1;
+          player.potions += 1;
+          addLog("Você abriu o baú com cuidado e encontrou ouro, essência de cura e 1 Frasco de Cura.");
+        } else {
+          addLog("Você abriu o baú com cuidado e encontrou ouro e essência de cura.");
+        }
+      } else if(effect === "risky_chest"){
+        const roll = Math.random();
+        if(roll < 0.5){
+          const drop = tryDropItem({rank:"General", element:MAPS[player.currentMap].favoredElement});
+          if(drop){
+            player.inventory.push(drop);
+            addLog(`O baú continha um item: ${drop.name}.`);
+          } else {
+            player.gold += 45;
+            ensureEconomy();
+            player.economy.goldEarned += 45;
+            addLog("Você forçou o baú e achou 45 ouro.");
+          }
+        } else if(roll < 0.82){
+          player.hp = Math.max(1, player.hp - 20);
+          addLog("Armadilha! Você perdeu 20 HP ao forçar o baú.");
+        } else {
+          addLog("Um guardião do baú despertou!");
+          player.eventChoice = null;
+          currentScreen = "world";
+          saveGame();
+          startBattle();
+          return;
+        }
+      } else if(effect === "mana_fountain"){
+        player.mana = Math.min(getEffectiveMaxMana(), player.mana + 60);
+        player.worldBuffs.mana = Math.max(player.worldBuffs.mana, 20);
+        player.worldBuffs.luck = Math.max(player.worldBuffs.luck, 1);
+        player.worldBuffs.duration = Math.max(player.worldBuffs.duration, 2);
+        addLog("A fonte restaurou 60 de mana e concedeu um buff arcano por 2 batalhas.");
+      } else if(effect === "essence_fountain"){
+        player.homeCraftStock.manaEssence += 2;
+        player.homeCraftStock.healEssence += 1;
+        player.worldBuffs.attack = Math.max(player.worldBuffs.attack, 3);
+        player.worldBuffs.duration = Math.max(player.worldBuffs.duration, 1);
+        addLog("Você coletou essências mágicas na fonte e ganhou +3 ATQ na próxima batalha.");
+        if(Math.random() < 0.3){
+          addLog("Um guardião elemental surgiu da fonte!");
+          player.eventChoice = null;
+          currentScreen = "world";
+          saveGame();
+          startBattle();
+          return;
+        }
+      } else if(effect === "forest_pact"){
+        player.attack += 3;
+        player.worldBuffs.attack = Math.max(player.worldBuffs.attack, 4);
+        player.worldBuffs.duration = Math.max(player.worldBuffs.duration, 2);
+        player.maxHp = Math.max(20, player.maxHp - 10);
+        player.hp = Math.min(player.hp, player.maxHp);
+        addLog("Pacto aceito: +3 ataque permanente, +4 ATQ por 2 batalhas, mas -10 HP máximo.");
+      } else if(effect === "forest_bless"){
+        player.homeCraftStock.healEssence += 2;
+        player.aura += 1;
+        player.worldBuffs.defense = Math.max(player.worldBuffs.defense, 3);
+        player.worldBuffs.duration = Math.max(player.worldBuffs.duration, 2);
+        addLog("A natureza o abençoou com essências, 1 aura e +3 DEF por 2 batalhas.");
+      } else if(effect === "lake_song"){
+        player.mana = Math.min(getEffectiveMaxMana(), player.mana + 40);
+        player.homeCraftStock.manaEssence += 2;
+        player.worldBuffs.mana = Math.max(player.worldBuffs.mana, 15);
+        player.worldBuffs.duration = Math.max(player.worldBuffs.duration, 2);
+        addLog("O eco do lago restaurou sua mana, concedeu essências e +15 MANA por 2 batalhas.");
+      } else {
+        addLog("Você decidiu seguir viagem sem interagir.");
+      }
+
+      player.eventChoice = null;
+      currentScreen = "world";
+      saveGame();
+      render();
+    }
+
+    function renderMore(){
+      document.getElementById("app").innerHTML = `
+        <div class="panel">
+          <div style="font-size:18px;font-weight:800;margin-bottom:10px;">Mais opções</div>
+          <button class="full" onclick="goTab('elder')">Ancião</button>
+          <button class="full" onclick="goTab('mine')">Mineração</button>
+          <button class="full" onclick="goTab('inn')">Estalagem</button>
+          <button class="full" onclick="goTab('quests')">Quests</button>
+          <button class="full" onclick="goTab('economy')">Economia</button>
+          <button class="full" onclick="goTab('save')">Salvar / Save</button>
+        </div>`;
+    }
+
+    function renderBattleRanks(){
+      return Object.keys(BATTLE_RANKS).map(rank => {
+        const cfg = BATTLE_RANKS[rank];
+        const unavailable = rank !== "random" && rank !== "Boss" && player.level < cfg.minLevel;
+        const bossLocked = rank === "Boss" && !player.worldProgress[player.currentMap].bossUnlocked;
+        const active = selectedBattleRank === rank;
+        return `<div class="rank-card ${active ? 'active-node' : ''}">
+          <p><strong>${cfg.label}</strong></p>
+          <p class="small">${rank==="Boss" ? 'Chefe regional do mapa.' : rank==="random" ? 'Escolha aleatória de encontro.' : `Disponível no nível ${cfg.minLevel}.`}</p>
+          <button onclick="setBattleRank('${rank}')" ${unavailable || bossLocked ? "disabled" : ""}>${active ? "Selecionado" : (bossLocked ? "Bloqueado" : "Selecionar")}</button>
+        </div>`;
+      }).join("");
+    }
+
+    function renderEquipment(){
+      return EQUIPMENT_SLOTS.map(slot => {
+        const item = player.equipment[slot];
+        return `<div class="item">
+          <p><span class="slot-label">${formatSlotName(slot)}:</span></p>
+          ${item ? `
+            <p><strong class="${getRarityClass(item.rarity)}">${item.name}</strong>${item.unique ? `<span class="badge rank">Único</span>` : ""}<span class="badge ${getElementClass(item.element)}">${item.element}</span></p>
+            <p class="small">Bônus: +${item.bonus} ${item.statType==="attack"?"Ataque":"Defesa"} • Raridade: ${item.rarity}</p>
+            <p class="small">Venda sugerida: ${getDynamicSellValue(item)} ouro • Refino: +${item.refineLevel || 0}</p>
+            <button onclick="unequipItem('${slot}')">Desequipar</button>
+            <button onclick="sellEquippedItem('${slot}')">Vender (${getDynamicSellValue(item)} ouro)</button>
+          ` : `<p class="empty">Nenhum item equipado.</p>`}
+        </div>`;
+      }).join("");
+    }
+
+    function renderInventory(){
+      if(!player.inventory.length) return `<p class="small">Seu inventário está vazio.</p>`;
+      return player.inventory.map((item,index) => `
+        <div class="item">
+          <p><strong class="${getRarityClass(item.rarity)}">${item.name}</strong>${item.unique ? `<span class="badge rank">Único</span>` : ""}<span class="badge ${getElementClass(item.element)}">${item.element}</span></p>
+          <p class="small">Slot: ${formatSlotName(item.slot)} • Bônus: +${item.bonus} ${item.statType==="attack"?"Ataque":"Defesa"} • Raridade: ${item.rarity} • Refino: +${item.refineLevel || 0}</p>
+          <p class="small">${getItemComparisonText(item)}</p>
+          <button onclick="equipItem(${index})">Equipar</button>
+          <button onclick="sellItem(${index})">Vender (${getDynamicSellValue(item)} ouro)</button>
+        </div>`).join("");
+    }
+
+    function renderLearnedSpells(){
+      if(!player.learnedSpells.length) return `<p class="small">Você ainda não aprendeu nenhuma magia com o Ancião.</p>`;
+      return player.learnedSpells.map(spellId => {
+        const spell = SPELL_BOOK.find(s => s.id === spellId);
+        return `<div class="item"><p><strong>${spell.name}</strong><span class="badge ${getElementClass(spell.element)}">${spell.element}</span></p><p class="small">Mana: ${spell.manaCost} • ${spell.description}</p></div>`;
+      }).join("");
+    }
+
+
+    function renderCompanion(){
+      if(!player.companion) return `<p class="small">Você ainda não possui um companheiro animal.</p>`;
+      return `
+        <div class="item">
+          <p><strong>${player.companion.name}</strong><span class="badge ${getElementClass(player.companion.element)}">${player.companion.element}</span></p>
+          <p class="small">Poder: ${player.companion.skill} (ativo em batalha)</p>
+          <p class="small">Bônus: +${player.companion.bonus} ${player.companion.bonusType === "attack" ? "Ataque" : player.companion.bonusType === "defense" ? "Defesa" : "Mana"}</p>
+        </div>
+      `;
+    }
+
+
+    function renderAttributes(){
+      const a = player.attributes;
+      return `
+        <div class="item">
+          <p><strong>Pontos disponíveis:</strong> ${a.points}</p>
+          <p class="small">Força: ${a.forca} • Resistência: ${a.resistencia} • Inteligência: ${a.inteligencia}</p>
+          <button onclick="spendAttribute('forca')" ${a.points<=0?"disabled":""}>+ Força</button>
+          <button onclick="spendAttribute('resistencia')" ${a.points<=0?"disabled":""}>+ Resistência</button>
+          <button onclick="spendAttribute('inteligencia')" ${a.points<=0?"disabled":""}>+ Inteligência</button>
+        </div>
+      `;
+    }
+
+    function renderHomePotions(){
+      return `
+        <div class="item">
+          <p><strong>Criação de poções na Casa</strong></p>
+          <p class="small">Materiais atuais — Cura: ${player.homeCraftStock.healEssence} • Mana: ${player.homeCraftStock.manaEssence}</p>
+          <p class="small">Receitas: 3 essências = 1 frasco.</p>
+          <button onclick="craftHomePotion('heal')" ${(player.homeCraftStock.healEssence<3)?"disabled":""}>Criar Frasco de Cura</button>
+          <button onclick="craftHomePotion('mana')" ${(player.homeCraftStock.manaEssence<3)?"disabled":""}>Criar Frasco de Mana</button>
+        </div>
+      `;
+    }
+
+    function spendAttribute(attr){
+      if(player.attributes.points <= 0) return;
+      player.attributes.points -= 1;
+      player.attributes[attr] += 1;
+      if(attr === 'forca') player.attack += 2;
+      if(attr === 'resistencia'){ player.defense += 1; player.maxHp += 8; player.hp = Math.min(player.maxHp, player.hp + 8); }
+      if(attr === 'inteligencia'){ player.maxMana += 8; player.mana = Math.min(getEffectiveMaxMana(), player.mana + 8); }
+      addLog(`Você investiu 1 ponto em ${attr}.`);
+      saveGame(); render();
+    }
+
+    function craftHomePotion(kind){
+      if(kind === 'heal'){
+        if(player.homeCraftStock.healEssence < 3) return;
+        player.homeCraftStock.healEssence -= 3;
+        player.healPotions.frasco += 1;
+        player.potions += 1;
+        addLog("Você criou 1 Frasco de Cura na Casa.");
+      } else {
+        if(player.homeCraftStock.manaEssence < 3) return;
+        player.homeCraftStock.manaEssence -= 3;
+        player.manaPotionStock.frasco += 1;
+        player.manaPotions += 1;
+        addLog("Você criou 1 Frasco de Mana na Casa.");
+      }
+      saveGame(); render();
+    }
+
+
+    function getPixelNodePosition(mapName, nodeId){
+      const positions = {
+        Floresta: {
+          bosque_inicial:{left:'8%', top:'16%'},
+          clareira_mineral:{left:'38%', top:'48%'},
+          tronco_antigo:{left:'66%', top:'16%'},
+          boss_floresta:{left:'72%', top:'68%'}
+        },
+        Reino: {
+          portao_real:{left:'8%', top:'54%'},
+          forja_real:{left:'38%', top:'16%'},
+          praca_central:{left:'66%', top:'48%'},
+          boss_reino:{left:'72%', top:'74%'}
+        },
+        Lago: {
+          margem_serena:{left:'8%', top:'18%'},
+          caverna_umida:{left:'40%', top:'54%'},
+          ilha_funda:{left:'68%', top:'18%'},
+          boss_lago:{left:'72%', top:'72%'}
+        }
+      };
+      return positions[mapName][nodeId];
+    }
+
+    function renderPixelMap(){
+      const nodes = MAP_NODES[player.currentMap];
+      const mapClass = player.currentMap.toLowerCase();
+      const decorByMap = {
+        Floresta: `
+          <div class="pixel-decor pixel-tree" style="left:6%; top:12%;"></div>
+          <div class="pixel-decor pixel-tree" style="left:18%; top:68%;"></div>
+          <div class="pixel-decor pixel-tree" style="left:31%; top:18%;"></div>
+          <div class="pixel-decor pixel-tree" style="left:56%; top:63%;"></div>
+          <div class="pixel-decor pixel-tree" style="left:82%; top:14%;"></div>
+          <div class="pixel-decor pixel-tree" style="left:86%; top:70%;"></div>
+          <div class="pixel-decor pixel-rock" style="left:64%; top:38%;"></div>
+        `,
+        Reino: `
+          <div class="pixel-decor pixel-castle" style="left:14%; top:14%;"></div>
+          <div class="pixel-decor pixel-castle" style="left:74%; top:12%;"></div>
+          <div class="pixel-decor pixel-rock" style="left:36%; top:72%;"></div>
+          <div class="pixel-decor pixel-rock" style="left:62%; top:62%;"></div>
+        `,
+        Lago: `
+          <div class="pixel-decor pixel-water" style="left:16%; top:14%;"></div>
+          <div class="pixel-decor pixel-water" style="left:70%; top:16%;"></div>
+          <div class="pixel-decor pixel-water" style="left:50%; top:70%;"></div>
+          <div class="pixel-decor pixel-rock" style="left:30%; top:48%;"></div>
+          <div class="pixel-decor pixel-rock" style="left:82%; top:62%;"></div>
+        `
+      };
+      const pathByMap = {
+        Floresta: `
+          <div class="pixel-path" style="left:18%; top:30%; width:24%; transform:rotate(24deg);"></div>
+          <div class="pixel-path" style="left:47%; top:30%; width:24%; transform:rotate(-20deg);"></div>
+        `,
+        Reino: `
+          <div class="pixel-path" style="left:18%; top:52%; width:24%; transform:rotate(-22deg);"></div>
+          <div class="pixel-path" style="left:48%; top:34%; width:22%; transform:rotate(26deg);"></div>
+        `,
+        Lago: `
+          <div class="pixel-path" style="left:19%; top:35%; width:24%; transform:rotate(28deg);"></div>
+          <div class="pixel-path" style="left:49%; top:34%; width:22%; transform:rotate(-26deg);"></div>
+        `
+      };
+      return `
+        <div class="pixel-map ${mapClass}">
+          <div class="pixel-map-grid"></div>
+          ${decorByMap[player.currentMap]}
+          ${pathByMap[player.currentMap]}
+          ${nodes.map(node => {
+            const pos = getPixelNodePosition(player.currentMap, node.id);
+            const icon = node.type === 'combate' ? '[⚔]' : node.type === 'mineracao' ? '[⛏]' : '[✦]';
+            return `
+              <div class="pixel-node ${player.currentNode===node.id ? "active" : ""}" style="left:${pos.left}; top:${pos.top};" onclick="travelNode('${node.id}')">
+                <div class="name">${icon} ${node.name}</div>
+                <div class="type">${node.type}</div>
+                <div class="badge-mini">${player.currentNode===node.id ? "ATUAL" : "IR"}</div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    function tryTravelBossNode(){
+      const progress = player.worldProgress[player.currentMap];
+      if(!progress.bossUnlocked){
+        addLog("O boss deste mapa ainda está bloqueado.");
+        return render();
+      }
+      selectedBattleRank = "Boss";
+      startBattle();
+      addLog(`Você enfrentou o boss de ${player.currentMap}!`);
+      saveGame();
+      render();
+    }
+
+    function renderWorld(){
+      const progress = player.worldProgress[player.currentMap];
+      document.getElementById("app").innerHTML = `
+        <div class="panel">
+          <div style="font-size:20px;font-weight:900;margin-bottom:10px;">Mapa Pixel Art — ${player.currentMap}</div>
+          <p class="small">Visual estilizado do bioma atual. Toque em um ponto do mapa para viajar até o local.</p>
+          <p class="small"><strong>Mapa atual:</strong> ${player.currentMap} • <strong>Node atual:</strong> ${getCurrentNode().name}</p>
+          ${renderPixelMap()}
+        </div>
+
+        <div class="panel">
+          <div style="font-size:18px;font-weight:800;margin-bottom:10px;">Selecionar região</div>
+          ${Object.keys(MAPS).map(name => {
+            const data = MAPS[name], p = player.worldProgress[name];
+            return `<div class="map-card ${player.currentMap===name ? "current-map" : ""}">
+              <p><strong>${name}</strong></p>
+              <p class="small">${data.description}</p>
+              <p class="small">Elemento: ${data.favoredElement} • Dificuldade: ${data.difficulty} • Recomendado: ${data.recommendedLevel}</p>
+              <p class="small">Boss: ${data.boss.name} • Vitórias: ${p.clears} • ${p.bossDefeated ? "Boss derrotado" : (p.bossUnlocked ? "Boss liberado" : "Boss bloqueado")}</p>
+              <button onclick="changeMap('${name}')" ${player.currentMap===name ? "disabled" : ""}>${player.currentMap===name ? "Mapa atual" : "Viajar para região"}</button>
+            </div>`;
+          }).join("")}
+        </div>
+
+        <div class="panel">
+          <div style="font-size:18px;font-weight:800;margin-bottom:10px;">Locais do mapa</div>
+          <div class="grid-3">
+            ${MAP_NODES[player.currentMap].map(node => `
+              <div class="node-card ${player.currentNode===node.id ? "active-node" : ""}">
+                <p><strong>${node.name}</strong></p>
+                <p class="small">Tipo: ${node.type}</p>
+                <p class="small">${node.desc}</p>
+                <button onclick="travelNode('${node.id}')" ${player.currentNode===node.id ? "disabled" : ""}>${player.currentNode===node.id ? "Node atual" : "Ir para node"}</button>
+              </div>`).join("")}
+          </div>
+          <div class="subpanel">
+            <p class="small">Mapa pixel visual ativo. Nodes de combate iniciam batalha na hora, nodes de evento abrem escolhas e o node do boss leva direto ao confronto final.</p><p class="small"><span class="pixel-boss-legend">BOSS</span> representa o chefe regional do mapa.</p>
+            <p class="small">Loot exclusivo do boss deste mapa: ${player.currentMap === "Floresta" ? "Raiz do Ent Supremo" : player.currentMap === "Reino" ? "Lâmina Carmesim Real" : "Coroa do Abismo"}</p>
+            <p class="small">Boss desbloqueado neste mapa: <strong>${progress.bossUnlocked ? "Sim" : "Não"}</strong></p>
+          </div>
+        </div>`;
+    }
+
+    function renderMerchant(){
+      document.getElementById("app").innerHTML = `
+        <div class="panel">
+          <div style="font-size:18px;font-weight:800;margin-bottom:10px;">Mercador</div>
+          <p>Ouro disponível: <strong>${player.gold}</strong></p>
+          <div class="subpanel">
+            <p><strong>Estoque atual</strong></p>
+            <p class="small">Cura — Frasco: ${(player.healPotions && player.healPotions.frasco) || 0} • Cálice: ${(player.healPotions && player.healPotions.calice) || 0} • Garrafa: ${(player.healPotions && player.healPotions.garrafa) || 0}</p>
+            <p class="small">Mana — Frasco: ${(player.manaPotionStock && player.manaPotionStock.frasco) || 0} • Cálice: ${(player.manaPotionStock && player.manaPotionStock.calice) || 0} • Garrafa: ${(player.manaPotionStock && player.manaPotionStock.garrafa) || 0}</p>
+          </div>
+          <div style="font-size:16px;font-weight:800;margin:10px 0;">Poções de Cura</div>
+          ${POTION_SHOP.heal.map(p => `
+            <div class="item">
+              <p><strong>${p.name}</strong></p>
+              <p class="small">Recupera ${p.heal} HP em batalha.</p>
+              <p class="small">Preço: ${p.price} ouro</p>
+              <button class="full" onclick="buyPotionTier('heal','${p.id}')">Comprar</button>
+            </div>
+          `).join("")}
+          <div style="font-size:16px;font-weight:800;margin:10px 0;">Poções de Mana</div>
+          ${POTION_SHOP.mana.map(p => `
+            <div class="item">
+              <p><strong>${p.name}</strong></p>
+              <p class="small">Recupera ${p.mana} mana em batalha.</p>
+              <p class="small">Preço: ${p.price} ouro</p>
+              <button class="full" onclick="buyPotionTier('mana','${p.id}')">Comprar</button>
+            </div>
+          `).join("")}
+        </div>`;
+    }
+
+    function renderElder(){
+      document.getElementById("app").innerHTML = `
+        <div class="panel">
+          <div style="font-size:18px;font-weight:800;margin-bottom:10px;">Ancião</div>
+          <p>Auras disponíveis: <strong>${player.aura}</strong></p>
+          <p class="small">Seu nível atual: ${player.level}. Novas magias ficam disponíveis conforme você evolui.</p>
+          ${SPELL_BOOK.filter(spell => player.level >= spell.reqLevel).map(spell => {
+            const learned = player.learnedSpells.includes(spell.id);
+            return `<div class="skill-card">
+              <p><strong>${spell.name}</strong><span class="badge ${getElementClass(spell.element)}">${spell.element}</span></p>
+              <p class="small">${spell.description}</p>
+              <p class="small">Nível req.: ${spell.reqLevel} • Custo: ${spell.auraCost} aura(s) • Mana: ${spell.manaCost}</p>
+              <button class="full" onclick="buySpell('${spell.id}')" ${learned ? "disabled" : ""}>${learned ? "Aprendida" : "Aprender"}</button>
+            </div>`;
+          }).join("")}
+          <div class="subpanel">
+            <p class="small">Magias futuras:</p>
+            ${SPELL_BOOK.filter(spell => player.level < spell.reqLevel).map(spell => `<p class="small">• ${spell.name} desbloqueia no nível ${spell.reqLevel}</p>`).join("") || '<p class="small">Todas as magias já estão liberadas para seu nível atual.</p>'}
+          </div>
+        </div>`;
+    }
+
+    function renderCraft(){
+      document.getElementById("app").innerHTML = `
+        <div class="panel">
+          <div style="font-size:18px;font-weight:800;margin-bottom:10px;">Crafting & Refino</div>
+          <p class="small">Seus materiais atuais:</p>
+          <span class="resource">🔥 Fogo: ${player.materials["Fogo"]}</span>
+          <span class="resource">🌊 Água: ${player.materials["Água"]}</span>
+          <span class="resource">🌍 Terra: ${player.materials["Terra"]}</span>
+        </div>
+
+        <div class="panel">
+          <div style="font-size:16px;font-weight:800;margin-bottom:10px;">Forjar itens</div>
+          ${CRAFT_RECIPES.map(recipe => `
+            <div class="recipe-card">
+              <p><strong class="${getRarityClass(recipe.rarity)}">${recipe.name}</strong><span class="badge ${getElementClass(recipe.element)}">${recipe.element}</span></p>
+              <p class="small">Slot: ${formatSlotName(recipe.slot)} • Bônus base: +${recipe.bonus} ${recipe.statType==="attack"?"Ataque":"Defesa"}</p>
+              <p class="small">Custo: ${recipe.cost} de ${recipe.material}</p>
+              <p class="small">Venda sugerida: ${Math.floor(getCraftPreviewSellValue(recipe) * getMarketPressure())} ouro</p>
+              <p class="small">${getCraftComparisonText(recipe)}</p>
+              <p class="small">Se já existir item no mesmo slot, você poderá substituir o item equipado automaticamente ao forjar.</p>
+              <button class="full" onclick="craftItem('${recipe.id}')" ${player.materials[recipe.material] < recipe.cost ? "disabled" : ""}>Forjar</button>
+            </div>`).join("")}
+        </div>
+
+        <div class="panel">
+          <div style="font-size:16px;font-weight:800;margin-bottom:10px;">Refinar itens do inventário</div>
+          ${renderRefineList()}
+        </div>`;
+    }
+
+    function renderRefineList(){
+      if(!player.inventory.length) return `<p class="small">Você não possui itens no inventário para refinar.</p>`;
+      return player.inventory.map((item, index) => {
+        const cost = getRefineCost(item);
+        const available = player.materials[item.element] >= cost;
+        return `<div class="item">
+          <p><strong class="${getRarityClass(item.rarity)}">${item.name}</strong>${item.unique ? `<span class="badge rank">Único</span>` : ""}<span class="badge ${getElementClass(item.element)}">${item.element}</span></p>
+          <p class="small">Bônus atual: +${item.bonus} • Refino: +${item.refineLevel || 0}</p>
+          <p class="small">Venda sugerida: ${getDynamicSellValue(item)} ouro</p>
+          <p class="small">Custo do próximo refino: ${cost} material(is) de ${item.element}</p>
+          <button class="full" onclick="refineInventoryItem(${index})" ${available ? "" : "disabled"}>Refinar item</button>
+        </div>`;
+      }).join("");
+    }
+
+    function renderMining(){
+      const node = getCurrentNode();
+      document.getElementById("app").innerHTML = `
+        <div class="panel">
+          <div style="font-size:18px;font-weight:800;margin-bottom:10px;">Mineração</div>
+          <p><strong>Mapa:</strong> ${player.currentMap}</p>
+          <p><strong>Node atual:</strong> ${node.name}</p>
+          <p class="small">Nodes de mineração rendem mais material do elemento predominante do mapa, mas qualquer node pode gerar uma coleta básica.</p>
+          <button class="full" onclick="mineResources()">Minerar recursos</button>
+          <div class="subpanel">
+            <p class="small">Minerações feitas neste mapa: ${player.worldProgress[player.currentMap].mines}</p>
+            <span class="resource">🔥 Fogo: ${player.materials["Fogo"]}</span>
+            <span class="resource">🌊 Água: ${player.materials["Água"]}</span>
+            <span class="resource">🌍 Terra: ${player.materials["Terra"]}</span>
+          </div>
+        </div>`;
+    }
+
+    function renderInn(){
+      const cost = getInnCost();
+      document.getElementById("app").innerHTML = `
+        <div class="panel">
+          <div style="font-size:18px;font-weight:800;margin-bottom:10px;">Estalagem</div>
+          <p class="small">Recupere completamente HP e Mana mediante pagamento.</p>
+          <p><strong>Custo da estadia:</strong> ${cost} ouro</p>
+          <p><strong>Seu ouro:</strong> ${player.gold}</p>
+          <button class="gold full" onclick="stayAtInn()">Ficar na estalagem</button>
+        </div>
+
+        <div class="panel">
+          <div style="font-size:16px;font-weight:800;margin-bottom:10px;">Trocas com hóspedes</div>
+          ${renderInnTrades()}
+        </div>
+
+        <div class="panel">
+          <div style="font-size:16px;font-weight:800;margin-bottom:10px;">Quests únicas da estalagem</div>
+          ${renderInnUniqueQuests()}
+        </div>
+
+        <div class="panel">
+          <div style="font-size:16px;font-weight:800;margin-bottom:10px;">Companheiros animais</div>
+          ${renderCompanionMarket()}
+        </div>`;
+    }
+
+    
+    function renderQuests(){
+      document.getElementById("app").innerHTML = `
+        <div class="panel">
+          <div style="font-size:18px;font-weight:800;margin-bottom:10px;">Quests</div>
+          ${player.quests.map((q,i)=>`
+            <div class="item">
+              <p><strong>${q.desc}</strong></p>
+              <p class="small">Progresso: ${q.progress}/${q.target}</p>
+              <p class="small">Recompensa: ${q.rewardGold} ouro${q.rewardAura ? ` • ${q.rewardAura} aura(s)` : ""}</p>
+              <button onclick="claimQuest(${i})" ${(!q.done || q.claimed) ? "disabled":""}>${q.claimed ? "Resgatada" : "Resgatar"}</button>
+            </div>
+          `).join("")}
+        </div>`;
+    }
+
+    function claimQuest(index){
+      const q = player.quests[index];
+      if(!q.done) return;
+      ensureEconomy();
+      player.gold += q.rewardGold;
+      player.aura += (q.rewardAura || 0);
+      player.economy.goldEarned += q.rewardGold;
+      addLog(`Quest concluída: ${q.desc}. Recompensa recebida.`);
+      if(q.type === "boss"){
+        q.claimed = true;
+      }
+      q.done = false;
+      q.progress = q.type === "boss" ? q.target : 0;
+      saveGame(); render();
+    }
+
+
+    function renderEconomy(){
+      ensureEconomy();
+      const avgWin = player.economy.battlesWon ? Math.floor(player.economy.goldEarned / player.economy.battlesWon) : 0;
+      const pressure = getMarketPressure();
+      document.getElementById("app").innerHTML = `
+        <div class="panel">
+          <div style="font-size:18px;font-weight:800;margin-bottom:10px;">Economia do Jogo</div>
+          <p class="small">Mini-DRE do grind e da progressão econômica.</p>
+          <div class="stats-grid">
+            <div class="stat"><div class="label">Receita</div><div class="value">${player.economy.goldEarned}</div></div>
+            <div class="stat"><div class="label">Despesas</div><div class="value">${player.economy.goldSpent}</div></div>
+            <div class="stat"><div class="label">Saldo</div><div class="value">${getNetGold()}</div></div>
+            <div class="stat"><div class="label">Mercado</div><div class="value">${pressure.toFixed(2)}x</div></div>
+            <div class="stat"><div class="label">Vitórias</div><div class="value">${player.economy.battlesWon}</div></div>
+            <div class="stat"><div class="label">Derrotas</div><div class="value">${player.economy.battlesLost}</div></div>
+            <div class="stat"><div class="label">Itens vendidos</div><div class="value">${player.economy.itemsSold}</div></div>
+            <div class="stat"><div class="label">Itens refinados</div><div class="value">${player.economy.itemsRefined}</div></div>
+            <div class="stat"><div class="label">Itens forjados</div><div class="value">${player.economy.itemsCrafted}</div></div>
+            <div class="stat"><div class="label">Média ouro/vitória</div><div class="value">${avgWin}</div></div>
+          </div>
+          <div class="subpanel">
+            <p><strong>Leitura:</strong></p>
+            <p class="small">Mercado alto valoriza vendas. Muitas derrotas reduzem pressão. O objetivo é calibrar o loop de minerar, forjar, refinar e vender.</p>
+          </div>
+        </div>`;
+    }
+
+
+
+    function renderInnTrades(){
+      return `
+        <div class="item">
+          <p><strong>Mercador Errante</strong></p>
+          <p class="small">Troca 3 materiais do elemento atual do mapa por 35 ouro.</p>
+          <button class="full" onclick="innTradeMaterials()">Realizar troca</button>
+        </div>
+      `;
+    }
+
+    function renderInnUniqueQuests(){
+      const quests = player.innUniqueQuests || [];
+      return quests.map((q, idx) => `
+        <div class="item">
+          <p><strong>${q.title}</strong></p>
+          <p class="small">${q.desc}</p>
+          <p class="small">Progresso: ${q.progress}/${q.target} • Recompensa: ${q.rewardGold} ouro • ${q.rewardAura} aura(s)</p>
+          <button class="full" onclick="claimInnQuest(${idx})" ${(!q.done || q.claimed) ? "disabled" : ""}>${q.claimed ? "Resgatada" : "Resgatar"}</button>
+        </div>
+      `).join("");
+    }
+
+    function renderCompanionMarket(){
+      return COMPANIONS.map(c => `
+        <div class="item">
+          <p><strong>${c.name}</strong><span class="badge ${getElementClass(c.element)}">${c.element}</span></p>
+          <p class="small">Habilidade: ${c.skill}</p>
+          <p class="small">Bônus: +${c.bonus} ${c.bonusType === "attack" ? "Ataque" : c.bonusType === "defense" ? "Defesa" : "Mana"}</p>
+          <p class="small">Preço: ${c.price} ouro</p>
+          <button class="full" onclick="buyCompanion('${c.id}')" ${(player.companion && player.companion.id === c.id) ? "disabled" : ""}>${(player.companion && player.companion.id === c.id) ? "Ativo" : "Adquirir"}</button>
+        </div>
+      `).join("");
+    }
+
+    function innTradeMaterials(){
+      const mat = MAPS[player.currentMap].favoredElement;
+      if(player.materials[mat] < 3){
+        addLog("Materiais insuficientes para a troca da estalagem.");
+        return render();
+      }
+      player.materials[mat] -= 3;
+      player.gold += 35;
+      ensureEconomy();
+      player.economy.goldEarned += 35;
+      addLog(`Você trocou 3 materiais de ${mat} por 35 ouro na estalagem.`);
+      updateInnQuest('trade');
+      saveGame();
+      render();
+    }
+
+    function claimInnQuest(index){
+      const q = player.innUniqueQuests[index];
+      if(!q || !q.done || q.claimed) return;
+      player.gold += q.rewardGold;
+      player.aura += q.rewardAura;
+      ensureEconomy();
+      player.economy.goldEarned += q.rewardGold;
+      q.claimed = true;
+      addLog(`Quest única concluída: ${q.title}.`);
+      saveGame();
+      render();
+    }
+
+    function buyCompanion(id){
+      const c = COMPANIONS.find(x => x.id === id);
+      if(!c) return;
+      if(player.gold < c.price){
+        addLog("Ouro insuficiente para adquirir este companheiro.");
+        return render();
+      }
+      player.gold -= c.price;
+      ensureEconomy();
+      player.economy.goldSpent += c.price;
+      player.companion = {...c, level:1, xp:0};
+      addLog(`${player.name} adquiriu o companheiro ${c.name}.`);
+      saveGame();
+      render();
+    }
+
+    function updateInnQuest(type){
+      if(!player.innUniqueQuests) return;
+      player.innUniqueQuests.forEach(q => {
+        if(q.claimed) return;
+        if(type === 'trade' && q.id === 'inn1') q.progress++;
+        if(type === 'mine' && q.id === 'inn2') q.progress++;
+        if(q.progress >= q.target) q.done = true;
+      });
+    }
+
+    function renderSaveCenter(){
+      document.getElementById("app").innerHTML = `
+        <div class="panel">
+          <div style="font-size:18px;font-weight:800;margin-bottom:10px;">Central de Progresso</div>
+          <button class="full" onclick="manualSave()">Salvar agora</button>
+          <button class="secondary full" onclick="continueGame()">Recarregar save atual</button>
+          <button class="danger full" onclick="resetSave()">Apagar save</button>
+          <p class="small">Tudo é salvo no navegador via localStorage.</p>
+        </div>`;
+    }
+
+    function startBattle(){
+      enemy = generateEnemy();
+      battleActive = true;
+      currentScreen = "battle";
+      player.temporaryDefenseBonus = 0;
+      lastRollInfo = {type:"-", roll:0, base:0, damage:0};
+      addLog(`Um ${enemy.rank} surgiu em ${player.currentMap}: ${enemy.name} de ${enemy.element}!`);
+      if(getActiveWorldBuffText()) addLog(getActiveWorldBuffText());
+      saveGame(); render();
+    }
+
+    function setBattleRank(rank){ selectedBattleRank = rank; saveGame(); render(); }
+
+    function weightedElement(favored){ const roll = Math.random(); if(roll < 0.5) return favored; const others = ELEMENTS.filter(el => el !== favored); return others[Math.floor(Math.random() * others.length)]; }
+
+    function getEnemyScalingFactor(rank){
+      const baseLevelScale = 1 + (player.level - 1) * 0.12;
+      const mapProgressScale = 1 + (player.worldProgress[player.currentMap].clears * 0.015);
+      const refinePressure = 1 + (getTotalRefineLevels() * 0.01);
+      const companionPressure = player.companion ? 1.08 : 1;
+      const rankPressure = rank === "Boss" ? 1.15 : rank === "General" ? 1.08 : rank === "Comandante" ? 1.04 : 1;
+      return baseLevelScale * mapProgressScale * refinePressure * companionPressure * rankPressure;
+    }
+
+    function getTotalRefineLevels(){
+      let total = 0;
+      if(player.inventory){
+        player.inventory.forEach(item => total += (item.refineLevel || 0));
+      }
+      if(player.equipment){
+        Object.values(player.equipment).forEach(item => { if(item) total += (item.refineLevel || 0); });
+      }
+      return total;
+    }
+
+    function generateEnemy(){
+      const mapData = MAPS[player.currentMap];
+      let rank = selectedBattleRank;
+      if(rank === "random"){
+        const roll = Math.random();
+        rank = "Lacaio";
+        if(player.level >= 3 && roll > 0.55) rank = "Comandante";
+        if(player.level >= 5 && roll > 0.80) rank = "General";
+      }
+
+      const scale = getEnemyScalingFactor(rank);
+
+      if(rank === "Boss"){
+        const bossCfg = MAPS[player.currentMap].boss;
+        const hp = Math.floor((95 + player.level * 18) * 2.8 * mapData.hpMultiplier * scale);
+        return {
+          name:bossCfg.name,
+          rank:"Boss",
+          element:bossCfg.element,
+          hp,
+          maxHp:hp,
+          attack:Math.floor((18 + player.level * 4) * 2.3 * scale),
+          defense:Math.floor((10 + player.level * 2.5) * 2.1 * scale),
+          xpReward:Math.floor((90 + player.level * 24) * mapData.xpMultiplier * (1 + scale * 0.15)),
+          goldReward:Math.floor((55 + player.level * 10) * mapData.goldMultiplier * (1 + scale * 0.10))
+        };
+      }
+
+      const element = weightedElement(mapData.favoredElement);
+      const rankMultiplier = BATTLE_RANKS[rank].multiplier;
+      const names = {
+        Floresta:{Fogo:["Raposa Rubra","Treant em Chamas","Fera da Casca Ardente"], Água:["Ninfa Orvalhada","Lodo das Raízes","Serpente da Névoa"], Terra:["Ent Ancião","Javali de Pedra","Besouro de Musgo"]},
+        Reino:{Fogo:["Cavaleiro Carmesim","Sentinela da Brasa","Golem Incandescente"], Água:["Guarda da Maré","Arauto do Canal","Espadachim Nebuloso"], Terra:["Guardião do Portão","Troll Rochoso","Carcereiro de Granito"]},
+        Lago:{Fogo:["Lagarto Escaldante","Fênix Jovem","Lobo da Bruma Quente"], Água:["Serpente Marinha","Slime Azul","Guardião da Maré"], Terra:["Tartaruga de Pedra","Caranguejo Rochoso","Monólito Errante"]}
+      };
+      const name = names[player.currentMap][element][Math.floor(Math.random() * names[player.currentMap][element].length)];
+      const hp = Math.floor((45 + player.level * 12) * rankMultiplier * mapData.hpMultiplier * scale);
+      return {
+        name,
+        rank,
+        element,
+        hp,
+        maxHp:hp,
+        attack:Math.floor((10 + player.level * 3) * rankMultiplier * scale),
+        defense:Math.floor((4 + player.level * 2) * rankMultiplier * scale),
+        xpReward:Math.floor((35 + player.level * 12) * rankMultiplier * mapData.xpMultiplier * (1 + scale * 0.12)),
+        goldReward:Math.floor((12 + player.level * 6) * rankMultiplier * mapData.goldMultiplier * (1 + scale * 0.08))
+      };
+    }
+
+    
+    function renderBattle(){
+      ensureStatuses();
+      const hpPct = Math.max(0, Math.min(100, Math.floor((player.hp / player.maxHp) * 100)));
+      const manaPct = Math.max(0, Math.min(100, Math.floor((player.mana / getEffectiveMaxMana()) * 100)));
+      document.getElementById("app").innerHTML = `
+        <div class="panel">
+          <div class="hero-line">
+            <div><strong>${player.name}</strong> • ${player.className} • ${player.currentMap}</div>
+            <div><span class="pill">Lvl ${player.level}</span></div>
+          </div>
+
+          <div class="battle-grid">
+            <div class="item">
+              <p><strong>❤️ HP</strong></p>
+              ${renderLiquidBar('hp', player.hp, player.maxHp)}
+            </div>
+            <div class="item">
+              <p><strong>🔵 Mana</strong></p>
+              ${renderLiquidBar('mana', player.mana, getEffectiveMaxMana())}
+            </div>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat"><div class="label">Ataque total</div><div class="value">${getPlayerAttackValue()}</div></div>
+            <div class="stat"><div class="label">Defesa total</div><div class="value">${getPlayerDefenseValue()}</div></div>
+            <div class="stat"><div class="label">Cura</div><div class="value">F:${player.healPotions.frasco} C:${player.healPotions.calice} G:${player.healPotions.garrafa}</div></div>
+            <div class="stat"><div class="label">Mana</div><div class="value">F:${player.manaPotionStock.frasco} C:${player.manaPotionStock.calice} G:${player.manaPotionStock.garrafa}</div></div>
+          </div>
+
+          <div class="subpanel">
+            <p><strong>${enemy.name}</strong><span class="badge rank">${enemy.rank}</span><span class="badge ${getElementClass(enemy.element)}">${enemy.element}</span></p>
+            <p><strong>Vida do inimigo</strong></p>
+            ${renderLiquidBar('hp', enemy.hp, enemy.maxHp)}
+            <p class="small">${elementHint(enemy.element)}</p>
+            <p class="small">${enemy.rank === 'Boss' ? `Habilidade do boss: ${getBossIdentity(player.currentMap).label}` : 'Escala dinâmica ativa: inimigos acompanham seu progresso.'}</p>
+            ${renderStatusChips(enemy)}
+          </div>
+
+          <div class="subpanel">
+            <p><strong>Seus status</strong></p>
+            ${getActiveWorldBuffText() ? `<p class="small"><strong>${getActiveWorldBuffText()}</strong></p>` : ""}
+            ${renderStatusChips(player) || '<p class="small">Sem status negativos.</p>'}
+          </div>
+
+          <div class="subpanel battle-actions">
+            <div class="battle-section-title">Ações principais</div>
+            <button class="attack" onclick="playerAttack()">Atacar</button>
+            <button class="skill" onclick="useSkill()">Habilidade</button>
+
+            <div class="battle-section-title">Magias</div>
+            ${renderBattleSpells()}
+
+            <div class="battle-section-title">Consumíveis</div>
+            ${renderBattleConsumables()}
+
+            <div class="battle-section-title">Saída</div>
+            <button class="flee secondary" onclick="runAway()">Fugir</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div style="font-size:18px;font-weight:800;margin-bottom:10px;">Dados da rodada</div>
+          <div class="dice-box">
+            <div class="dice-card"><div class="small">Tipo</div><div>${lastRollInfo.type}</div></div>
+            <div class="dice-card"><div class="small">d20</div><div class="dice-value">${lastRollInfo.roll || "-"}</div></div>
+            <div class="dice-card"><div class="small">Base</div><div>${lastRollInfo.base || "-"}</div></div>
+            <div class="dice-card"><div class="small">Dano final</div><div>${lastRollInfo.damage || "-"}</div></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div style="font-size:18px;font-weight:800;margin-bottom:10px;">Combate</div>
+          <div class="log-box">${battleLog.slice(-14).map(msg => `<p>${msg}</p>`).join("")}</div>
+        </div>`;
+    }
+
+
+
+    
+    function ensureStatuses(){
+      if(!player.statuses) player.statuses = {veneno:0, queimadura:0, congelamento:0, stun:0};
+      if(enemy && !enemy.statuses) enemy.statuses = {veneno:0, queimadura:0, congelamento:0, stun:0};
+    }
+
+    function getBossIdentity(mapName){
+      return {
+        Floresta: {effect:"veneno", label:"Esporos Tóxicos"},
+        Reino: {effect:"bloqueio", label:"Ruptura de Guarda"},
+        Lago: {effect:"drenar_mana", label:"Maré Exaustiva"}
+      }[mapName];
+    }
+
+    function applyStatusTicks(){
+      ensureStatuses();
+      if(player.statuses.veneno > 0){
+        player.hp = Math.max(1, player.hp - 6);
+        player.statuses.veneno -= 1;
+        addLog("☠ Veneno causa 6 de dano em você.");
+      }
+      if(player.statuses.queimadura > 0){
+        player.hp = Math.max(1, player.hp - 4);
+        player.statuses.queimadura -= 1;
+        addLog("🔥 Queimadura causa 4 de dano em você.");
+      }
+      if(enemy && enemy.statuses.veneno > 0){
+        enemy.hp = Math.max(1, enemy.hp - 6);
+        enemy.statuses.veneno -= 1;
+        addLog("☠ Veneno causa 6 de dano no inimigo.");
+      }
+      if(enemy && enemy.statuses.queimadura > 0){
+        enemy.hp = Math.max(1, enemy.hp - 4);
+        enemy.statuses.queimadura -= 1;
+        addLog("🔥 Queimadura causa 4 de dano no inimigo.");
+      }
+    }
+
+    function renderStatusChips(target){
+      if(!target || !target.statuses) return "";
+      const labels = [];
+      if(target.statuses.veneno > 0) labels.push(`<span class="status-chip">☠ Veneno ${target.statuses.veneno}</span>`);
+      if(target.statuses.queimadura > 0) labels.push(`<span class="status-chip">🔥 Queimadura ${target.statuses.queimadura}</span>`);
+      if(target.statuses.congelamento > 0) labels.push(`<span class="status-chip">❄ Congelado ${target.statuses.congelamento}</span>`);
+      if(target.statuses.stun > 0) labels.push(`<span class="status-chip">⚡ Atordoado ${target.statuses.stun}</span>`);
+      return labels.join("");
+    }
+
+    function renderHomeConsumables(){
+      let buttons = "";
+      if((player.healPotions?.frasco || 0) > 0) buttons += `<button onclick="usePotion('frasco')">Usar Cura F (${player.healPotions.frasco})</button>`;
+      if((player.healPotions?.calice || 0) > 0) buttons += `<button onclick="usePotion('calice')">Usar Cura C (${player.healPotions.calice})</button>`;
+      if((player.healPotions?.garrafa || 0) > 0) buttons += `<button onclick="usePotion('garrafa')">Usar Cura G (${player.healPotions.garrafa})</button>`;
+      if((player.manaPotionStock?.frasco || 0) > 0) buttons += `<button onclick="useManaPotion('frasco')">Usar Mana F (${player.manaPotionStock.frasco})</button>`;
+      if((player.manaPotionStock?.calice || 0) > 0) buttons += `<button onclick="useManaPotion('calice')">Usar Mana C (${player.manaPotionStock.calice})</button>`;
+      if((player.manaPotionStock?.garrafa || 0) > 0) buttons += `<button onclick="useManaPotion('garrafa')">Usar Mana G (${player.manaPotionStock.garrafa})</button>`;
+      return buttons || `<p class="small">Você não possui consumíveis disponíveis na Casa.</p>`;
+    }
+
+    function renderBattleConsumables(){
+      let buttons = "";
+      if((player.healPotions?.frasco || 0) > 0) buttons += `<button class="heal" onclick="usePotion('frasco')">Cura F (${player.healPotions.frasco})</button>`;
+      if((player.healPotions?.calice || 0) > 0) buttons += `<button class="heal" onclick="usePotion('calice')">Cura C (${player.healPotions.calice})</button>`;
+      if((player.healPotions?.garrafa || 0) > 0) buttons += `<button class="heal" onclick="usePotion('garrafa')">Cura G (${player.healPotions.garrafa})</button>`;
+      if((player.manaPotionStock?.frasco || 0) > 0) buttons += `<button class="mana" onclick="useManaPotion('frasco')">Mana F (${player.manaPotionStock.frasco})</button>`;
+      if((player.manaPotionStock?.calice || 0) > 0) buttons += `<button class="mana" onclick="useManaPotion('calice')">Mana C (${player.manaPotionStock.calice})</button>`;
+      if((player.manaPotionStock?.garrafa || 0) > 0) buttons += `<button class="mana" onclick="useManaPotion('garrafa')">Mana G (${player.manaPotionStock.garrafa})</button>`;
+      return buttons || `<p class="small">Sem consumíveis disponíveis.</p>`;
+    }
+
+    function renderBattleSpells(){
+      if(!player.learnedSpells.length) return `<p class="small">Aprenda magias com o Ancião para usar em batalha.</p>`;
+      return player.learnedSpells.map(id => {
+        const spell = SPELL_BOOK.find(s => s.id === id);
+        if(!spell) return "";
+        return `<button class="skill" onclick="castSpell('${id}')" ${player.mana < spell.manaCost ? "disabled" : ""}>${spell.name} (${spell.manaCost})</button>`;
+      }).join("") || `<p class="small">Sem magias disponíveis.</p>`;
+    }
+
+    function elementHint(e){ if(e==="Fogo") return "Fraqueza: Água"; if(e==="Água") return "Fraqueza: Terra"; return "Fraqueza: Fogo"; }
+
+    function getClassCombatBonus(){
+      if(player.classKey === "guerreiro") return {attackRoll:2, skillRoll:2, critChance:0.05};
+      if(player.classKey === "arqueiro") return {attackRoll:0, skillRoll:1, critChance:0.15};
+      return {attackRoll:0, skillRoll:2, critChance:0.08};
+    }
+
+    function applyElementalStatusFromPlayer(kind, element){
+      if(!enemy || !enemy.statuses) return;
+      const chance = kind === "spell" ? 0.35 : 0.2;
+      const roll = Math.random();
+      if(element === "Fogo" && roll < chance){
+        enemy.statuses.queimadura = Math.max(enemy.statuses.queimadura, 2);
+        addLog("🔥 O inimigo sofreu queimadura.");
+      } else if(element === "Água" && roll < chance){
+        enemy.statuses.congelamento = Math.max(enemy.statuses.congelamento, 1);
+        addLog("❄ O inimigo sofreu lentidão gélida.");
+      } else if(element === "Terra" && roll < chance){
+        player.hp = Math.min(player.maxHp, player.hp + 5);
+        addLog("🌿 A afinidade com Terra regenerou 5 HP.");
+      }
+    }
+
+    function applyElementalStatusFromEnemy(){
+      if(!enemy || !player.statuses) return;
+      const roll = Math.random();
+      if(enemy.element === "Fogo" && roll < 0.22){
+        player.statuses.queimadura = Math.max(player.statuses.queimadura, 2);
+        addLog("🔥 Você sofreu queimadura.");
+      } else if(enemy.element === "Água" && roll < 0.22){
+        player.statuses.congelamento = Math.max(player.statuses.congelamento, 1);
+        addLog("❄ Você sofreu lentidão gélida.");
+      } else if(enemy.element === "Terra" && roll < 0.20){
+        enemy.hp = Math.min(enemy.maxHp, enemy.hp + 5);
+        addLog("🌿 O inimigo regenerou 5 HP com a força da Terra.");
+      }
+    }
+
+    function tryEnemySkill(){
+      if(!enemy) return false;
+      const roll = Math.random();
+      if(enemy.rank === "Boss" && roll < 0.45){
+        const id = getBossIdentity(player.currentMap);
+        if(id.effect === "veneno"){
+          player.statuses.veneno = Math.max(player.statuses.veneno, 3);
+          addLog(`☠ ${enemy.name} lançou ${id.label} e envenenou você.`);
+        } else if(id.effect === "bloqueio"){
+          player.temporaryDefenseBonus = Math.max(0, player.temporaryDefenseBonus - 4);
+          addLog(`🛡 ${enemy.name} usou ${id.label} e reduziu sua defesa temporária.`);
+        } else if(id.effect === "drenar_mana"){
+          player.mana = Math.max(0, player.mana - 14);
+          addLog(`🌊 ${enemy.name} usou ${id.label} e drenou 14 de mana.`);
+        }
+        lastRollInfo = {type:id.label, roll:"SKILL", base:0, damage:0};
+        return true;
+      }
+      if(enemy.rank !== "Boss" && roll < 0.18){
+        if(enemy.element === "Fogo"){
+          player.statuses.queimadura = Math.max(player.statuses.queimadura, 2);
+          addLog(`🔥 ${enemy.name} aplicou queimadura.`);
+        } else if(enemy.element === "Água"){
+          player.statuses.congelamento = Math.max(player.statuses.congelamento, 1);
+          addLog(`❄ ${enemy.name} aplicou lentidão gélida.`);
+        } else if(enemy.element === "Terra"){
+          enemy.hp = Math.min(enemy.maxHp, enemy.hp + 6);
+          addLog(`🌿 ${enemy.name} usou pele de terra e regenerou 6 HP.`);
+        }
+        lastRollInfo = {type:"Técnica inimiga", roll:"SKILL", base:0, damage:0};
+        return true;
+      }
+      return false;
+    }
+
+    function getElementalMultiplier(a,t){
+      if((a==="Fogo"&&t==="Terra")||(a==="Terra"&&t==="Água")||(a==="Água"&&t==="Fogo")) return 1.25;
+      if((a==="Terra"&&t==="Fogo")||(a==="Água"&&t==="Terra")||(a==="Fogo"&&t==="Água")) return 0.8;
+      return 1;
+    }
+
+    function getActiveWorldBuffText(){
+      if(!player || !player.worldBuffs || player.worldBuffs.duration <= 0) return "";
+      const parts = [];
+      if(player.worldBuffs.attack) parts.push(`ATQ +${player.worldBuffs.attack}`);
+      if(player.worldBuffs.defense) parts.push(`DEF +${player.worldBuffs.defense}`);
+      if(player.worldBuffs.mana) parts.push(`MANA +${player.worldBuffs.mana}`);
+      if(player.worldBuffs.luck) parts.push(`SORTE +${player.worldBuffs.luck}`);
+      return `Buff ativo (${player.worldBuffs.duration} batalha${player.worldBuffs.duration>1?'s':''}): ` + parts.join(" • ");
+    }
+
+    function consumeWorldBuffBattle(){
+      if(!player || !player.worldBuffs || player.worldBuffs.duration <= 0) return;
+      player.worldBuffs.duration -= 1;
+      if(player.worldBuffs.duration <= 0){
+        player.worldBuffs = {attack:0,defense:0,mana:0,luck:0,duration:0};
+        addLog("Os efeitos temporários do mapa se dissiparam.");
+      }
+    }
+
+    function getEquipmentBonus(type){ return EQUIPMENT_SLOTS.reduce((tot,slot)=>{const item = player.equipment[slot]; if(item && item.statType===type) tot += item.bonus; return tot;},0); }
+    function getPlayerAttackValue(){
+      let bonus = player.attack + getEquipmentBonus("attack") + ((player.worldBuffs && player.worldBuffs.duration>0) ? player.worldBuffs.attack : 0);
+      if(player.companion && player.companion.bonusType === "attack") bonus += player.companion.bonus;
+      return bonus;
+    }
+    function getEffectiveMaxMana(){
+      let total = player.maxMana + ((player.worldBuffs && player.worldBuffs.duration>0) ? player.worldBuffs.mana : 0);
+      if(player.companion && player.companion.bonusType === "mana") total += player.companion.bonus;
+      return total;
+    }
+    function getPlayerDefenseValue(){
+      let bonus = player.defense + getEquipmentBonus("defense") + player.temporaryDefenseBonus + ((player.worldBuffs && player.worldBuffs.duration>0) ? player.worldBuffs.defense : 0);
+      if(player.companion && player.companion.bonusType === "defense") bonus += player.companion.bonus;
+      return bonus;
+    }
+    function applySpellElement(dmg, element){
+      const mult = getElementalMultiplier(element, enemy.element);
+      const finalD = Math.max(1, Math.floor(dmg * mult));
+      if(mult > 1) addLog("A magia acertou uma fraqueza elemental.");
+      if(mult < 1) addLog("A magia sofreu resistência elemental.");
+      return finalD;
+    }
+
+    function playerAttack(){
+      const roll = Math.floor(Math.random() * 20) + 1;
+      let base = getPlayerAttackValue() + roll;
+      let dmg = Math.max(1, base - enemy.defense);
+      if(player.equipment.arma){
+        const mult = getElementalMultiplier(player.equipment.arma.element, enemy.element);
+        dmg = Math.max(1, Math.floor(dmg * mult));
+        if(mult > 1) addLog("Vantagem elemental! Seu ataque foi fortalecido.");
+        if(mult < 1) addLog("Desvantagem elemental! Seu ataque perdeu força.");
+      }
+      enemy.hp -= dmg;
+      lastRollInfo = {type:"Ataque", roll, base, damage:dmg};
+      addLog(`${player.name} rolou d20=${roll} e causou ${dmg} de dano em ${enemy.name}.`);
+      if(enemy.hp <= 0) return winBattle();
+      companionAction();
+      if(enemy.hp <= 0) return winBattle();
+      companionAction();
+      if(enemy.hp <= 0) return winBattle();
+      companionAction();
+      if(enemy.hp <= 0) return winBattle();
+      companionAction();
+      if(enemy.hp <= 0) return winBattle();
+      saveGame(); enemyTurn();
+    }
+
+    function useSkill(){
+      let manaCost=0,dmg=0,name="";
+      const roll = Math.floor(Math.random() * 20) + 1;
+      let base = 0;
+      if(player.classKey==="guerreiro"){ manaCost=6; base=Math.floor((getPlayerAttackValue()*1.6)+roll); dmg=Math.max(1,base-enemy.defense); name="Golpe Pesado";}
+      else if(player.classKey==="arqueiro"){ manaCost=8; base=Math.floor((getPlayerAttackValue()*1.7)+roll); dmg=Math.max(1,base-enemy.defense); name="Flecha Precisa";}
+      else { manaCost=12; base=Math.floor((getPlayerAttackValue()*2.0)+roll); dmg=Math.max(1,base-enemy.defense); name="Explosão Arcana";}
+      if(player.mana < manaCost){ addLog("Mana insuficiente."); return render(); }
+      if(player.equipment.arma){
+        const mult = getElementalMultiplier(player.equipment.arma.element, enemy.element);
+        dmg = Math.max(1, Math.floor(dmg * mult));
+        if(mult > 1) addLog("Sua arma elemental ampliou a habilidade.");
+        if(mult < 1) addLog("A afinidade elemental reduziu a força da habilidade.");
+      }
+      player.mana -= manaCost;
+      enemy.hp -= dmg;
+      lastRollInfo = {type:name, roll, base, damage:dmg};
+      addLog(`${player.name} rolou d20=${roll}, usou ${name} e causou ${dmg} de dano.`);
+      if(enemy.hp <= 0) return winBattle();
+      companionAction();
+      if(enemy.hp <= 0) return winBattle();
+      saveGame(); enemyTurn();
+    }
+
+    function castSpell(id){
+      const spell = SPELL_BOOK.find(s => s.id===id);
+      if(!spell || !player.learnedSpells.includes(id)) return;
+      if(player.mana < spell.manaCost){ addLog(`Mana insuficiente para usar ${spell.name}.`); return render(); }
+      player.mana -= spell.manaCost;
+      const roll = Math.floor(Math.random() * 20) + 1;
+      if(spell.type==="damage"){
+        let base=Math.floor((getPlayerAttackValue()*(spell.power + (player.level * 0.08))) + roll);
+        let dmg=Math.max(1,base-enemy.defense);
+        dmg=applySpellElement(dmg, spell.element);
+        enemy.hp -= dmg;
+        lastRollInfo = {type:spell.name, roll, base, damage:dmg};
+        addLog(`${player.name} rolou d20=${roll}, conjurou ${spell.name} e causou ${dmg} de dano.`);
+      }
+      if(spell.type==="buff"){
+        player.temporaryDefenseBonus += spell.defenseBuff;
+        lastRollInfo = {type:spell.name, roll, base:spell.defenseBuff, damage:0};
+        addLog(`${player.name} rolou d20=${roll}, conjurou ${spell.name} e ganhou +${spell.defenseBuff} de defesa temporária.`);
+      }
+      if(spell.type==="drain"){
+        let base=Math.floor((getPlayerAttackValue()*(spell.power + (player.level * 0.08))) + roll);
+        let dmg=Math.max(1,base-enemy.defense);
+        dmg=applySpellElement(dmg, spell.element);
+        enemy.hp -= dmg;
+        player.mana = Math.min(getEffectiveMaxMana(), player.mana + spell.manaRestore);
+        lastRollInfo = {type:spell.name, roll, base, damage:dmg};
+        addLog(`${player.name} rolou d20=${roll}, usou ${spell.name}, causou ${dmg} de dano e recuperou ${spell.manaRestore} de mana.`);
+      }
+      if(enemy.hp <= 0) return winBattle();
+      companionAction();
+      if(enemy.hp <= 0) return winBattle();
+      saveGame(); enemyTurn();
+    }
+
+    function usePotion(tier='frasco'){
+      const heals = {frasco:40, calice:85, garrafa:150};
+      if((player.healPotions[tier] || 0) <= 0){
+        addLog("Você não possui esse tipo de poção de cura.");
+        return render();
+      }
+      player.healPotions[tier] -= 1;
+      if(tier === 'frasco' && player.potions > 0) player.potions -= 1;
+      player.hp = Math.min(player.maxHp, player.hp + heals[tier]);
+      addLog(`${player.name} usou ${tier === 'frasco' ? 'Frasco' : tier === 'calice' ? 'Cálice' : 'Garrafa'} de Cura e recuperou ${heals[tier]} HP.`);
+      companionAction();
+      if(battleActive && enemy && enemy.hp <= 0) return winBattle();
+      companionAction();
+      if(battleActive && enemy && enemy.hp <= 0) return winBattle();
+      saveGame();
+      if(battleActive){ enemyTurn(); } else { addLog('Você se recuperou na Casa usando um consumível.'); render(); }
+    }
+
+    function useManaPotion(tier='frasco'){
+      const manas = {frasco:30, calice:70, garrafa:130};
+      if((player.manaPotionStock[tier] || 0) <= 0){
+        addLog("Você não possui esse tipo de poção de mana.");
+        return render();
+      }
+      player.manaPotionStock[tier] -= 1;
+      if(tier === 'frasco' && player.manaPotions > 0) player.manaPotions -= 1;
+      player.mana = Math.min(getEffectiveMaxMana(), player.mana + manas[tier]);
+      addLog(`${player.name} usou ${tier === 'frasco' ? 'Frasco' : tier === 'calice' ? 'Cálice' : 'Garrafa'} de Mana e recuperou ${manas[tier]} de mana.`);
+      saveGame();
+      if(battleActive){ enemyTurn(); } else { addLog('Você restaurou mana na Casa usando um consumível.'); render(); }
+    }
+
+    
+    function enemyTurn(){
+      ensureStatuses();
+      applyStatusTicks();
+      if(enemy && enemy.hp <= 0) return winBattle();
+
+      if(player.statuses.stun > 0){
+        player.statuses.stun -= 1;
+      }
+
+      let damage = Math.max(1, enemy.attack - getPlayerDefenseValue());
+
+      if(enemy.rank === "Boss"){
+        const bossIdentity = getBossIdentity(player.currentMap);
+        if(bossIdentity.effect === "veneno" && Math.random() < 0.4){
+          player.statuses.veneno = Math.max(player.statuses.veneno, 3);
+          addLog(`☠ ${enemy.name} usou ${bossIdentity.label} e aplicou veneno.`);
+        }
+        if(bossIdentity.effect === "bloqueio" && Math.random() < 0.35){
+          player.temporaryDefenseBonus = Math.max(0, player.temporaryDefenseBonus - 3);
+          damage += 4;
+          addLog(`🛡 ${enemy.name} usou ${bossIdentity.label} e rompeu sua defesa.`);
+        }
+        if(bossIdentity.effect === "drenar_mana" && Math.random() < 0.45){
+          player.mana = Math.max(0, player.mana - 12);
+          addLog(`🌊 ${enemy.name} usou ${bossIdentity.label} e drenou 12 de mana.`);
+        }
+      }
+
+      if(player.statuses.congelamento > 0){
+        damage += 3;
+        player.statuses.congelamento -= 1;
+      }
+
+      player.hp -= damage;
+      addLog(`${enemy.name} atacou e causou ${damage} de dano.`);
+
+      if(player.hp <= 0){
+        player.hp = 0;
+        addLog(`${player.name} foi derrotado.`);
+        alert("Você foi derrotado. Seu HP e mana foram restaurados, mas perdeu 10 ouro.");
+        player.gold = Math.max(0, player.gold - 10);
+        ensureEconomy();
+        player.economy.goldSpent += 10;
+        player.economy.battlesLost += 1;
+        player.hp = player.maxHp;
+        player.mana = getEffectiveMaxMana();
+        player.temporaryDefenseBonus = 0;
+        battleActive = false;
+        enemy = null;
+        currentScreen = "casa";
+      }
+
+      saveGame(); render();
+    }
+
+
+    function runAway(){
+      addLog(`${player.name} fugiu da batalha.`);
+      player.temporaryDefenseBonus = 0; consumeWorldBuffBattle(); battleActive = false; enemy = null; currentScreen = "casa";
+      saveGame(); render();
+    }
+
+    function winBattle(){
+      addLog(`Você derrotou ${enemy.name}!`);
+      player.xp += enemy.xpReward;
+      player.gold += enemy.goldReward;
+      ensureEconomy();
+      player.economy.goldEarned += enemy.goldReward;
+      player.economy.battlesWon += 1;
+      player.worldProgress[player.currentMap].clears += 1;
+      updateQuest('battle', {map: player.currentMap});
+      const bossCfg = MAPS[player.currentMap].boss;
+      if(!player.worldProgress[player.currentMap].bossUnlocked && player.worldProgress[player.currentMap].clears >= bossCfg.unlockClears){
+        player.worldProgress[player.currentMap].bossUnlocked = true;
+        addLog(`O boss ${bossCfg.name} foi desbloqueado em ${player.currentMap}!`);
+      }
+      if(enemy.rank === "Boss"){
+        // boss special mechanics
+        if(enemy.hp < enemy.maxHp/2 && !enemy.enraged){
+          enemy.attack = Math.floor(enemy.attack * 1.5);
+          enemy.defense = Math.floor(enemy.defense * 1.2);
+          enemy.enraged = true;
+          addLog("Boss entrou em FÚRIA! Ataque e defesa aumentados.");
+        }
+        if(enemy.hp < enemy.maxHp*0.25 && !enemy.lastStand){
+          enemy.hp += Math.floor(enemy.maxHp * 0.15);
+          enemy.lastStand = true;
+          addLog("Boss ativou ÚLTIMA RESISTÊNCIA e recuperou parte da vida!");
+        } player.worldProgress[player.currentMap].bossDefeated = true; addLog(`Boss regional derrotado: ${enemy.name}.`); }
+      addLog(`Recebeu ${enemy.xpReward} XP e ${enemy.goldReward} ouro.`);
+      const mapBonus = MAPS[player.currentMap].materialBonus[enemy.element] || 0;
+      const rankBonus = BATTLE_RANKS[enemy.rank] ? BATTLE_RANKS[enemy.rank].bonusLoot : 0;
+      const materialQtyCasa = enemy.rank === "Boss" ? 3 : enemy.rank === "General" ? 2 : 1;
+      const materialQty = materialQtyCasa + mapBonus + rankBonus;
+      player.materials[enemy.element] += materialQty;
+      addLog(`Dropou ${materialQty} material(is) de ${enemy.element}.`);
+      const itemDrop = tryDropItem(enemy);
+      if(itemDrop){ player.inventory.push(itemDrop); addLog(`Item dropado: ${itemDrop.name}.`); } else addLog("Nenhum equipamento dropado desta vez.");
+
+      const miscRoll = Math.random();
+      if(miscRoll < 0.18){
+        player.healPotions.frasco += 1;
+        player.potions += 1;
+        addLog("Monstro dropou 1 Frasco de Cura.");
+      } else if(miscRoll < 0.32){
+        player.manaPotionStock.frasco += 1;
+        player.manaPotions += 1;
+        addLog("Monstro dropou 1 Frasco de Mana.");
+      } else if(miscRoll < 0.48){
+        player.homeCraftStock.healEssence += 1;
+        addLog("Monstro dropou 1 Essência de Cura.");
+      } else if(miscRoll < 0.64){
+        player.homeCraftStock.manaEssence += 1;
+        addLog("Monstro dropou 1 Essência de Mana.");
+      }
+      grantCompanionXP();
+      handleLevelUp();
+      player.temporaryDefenseBonus = 0;
+      player.hp = Math.max(1, Math.min(player.maxHp, player.hp));
+      consumeWorldBuffBattle();
+      battleActive = false; enemy = null; currentScreen = "casa";
+      saveGame(); render();
+    }
+
+    
+    function handleLevelUp(){
+      let leveled = false;
+      while(player.xp >= player.xpToNext){
+        ensurePlayerState();
+        player.xp -= player.xpToNext;
+        player.level += 1;
+        player.xpToNext = Math.floor(player.xpToNext * 1.35);
+        player.maxHp += 18;
+        player.attack += 4;
+        player.defense += 2;
+        player.maxMana += 8;
+        player.aura += 1;
+        player.attributes.points += 2;
+        player.hp = player.maxHp;
+        player.mana = getEffectiveMaxMana();
+        leveled = true;
+        addLog(`LEVEL UP! ${player.name} agora está no nível ${player.level}.`);
+        addLog(`Você recebeu 1 aura. Total atual: ${player.aura}.`);
+        addLog(`Você recebeu 2 pontos de atributo. Total disponível: ${player.attributes.points}.`);
+      }
+      if(leveled) alert(`Parabéns! ${player.name} subiu de nível, foi restaurado e recebeu aura(s) e pontos de atributo.`);
+    }
+
+
+
+    function createBossLoot(mapName){
+      const bossLootByMap = {
+        Floresta: {name:"Raiz do Ent Supremo", slot:"armadura", element:"Terra", bonus:12 + player.level, statType:"defense", rarity:"Mítico"},
+        Reino: {name:"Lâmina Carmesim Real", slot:"arma", element:"Fogo", bonus:12 + player.level, statType:"attack", rarity:"Mítico"},
+        Lago: {name:"Coroa do Abismo", slot:"elmo", element:"Água", bonus:11 + player.level, statType:"defense", rarity:"Mítico"}
+      };
+      const item = bossLootByMap[mapName];
+      return {
+        ...item,
+        sellValue:(item.bonus * 6),
+        refineLevel:0,
+        unique:true
+      };
+    }
+
+    function tryDropItem(enemyData){
+      let chance = 0.35; if(enemyData.rank==="Comandante") chance=0.50; if(enemyData.rank==="General") chance=0.70; if(enemyData.rank==="Boss") chance=1.00;
+      if(Math.random() > chance) return null;
+      const slot = EQUIPMENT_SLOTS[Math.floor(Math.random()*EQUIPMENT_SLOTS.length)];
+      const rarityRoll = Math.random(); let rarity="Comum"; let bonus=2 + player.level;
+      if(rarityRoll > 0.55){ rarity="Raro"; bonus += 2; } if(rarityRoll > 0.82){ rarity="Épico"; bonus += 4; } if(rarityRoll > 0.96){ rarity="Lendário"; bonus += 7; }
+      const statType = slot === "arma" ? "attack" : "defense";
+      const names = {
+        arma:{Fogo:["Espada Flamejante","Arco de Brasas","Cajado Ígneo"], Água:["Lâmina das Marés","Arco da Correnteza","Cajado da Chuva"], Terra:["Machado Rochoso","Arco Raiz Profunda","Cajado de Pedra"]},
+        elmo:{Fogo:["Elmo Vulcânico","Capuz em Brasa","Tiara Ígnea"], Água:["Elmo das Marés","Capuz da Névoa","Tiara da Chuva"], Terra:["Elmo Granítico","Capuz Musgoso","Tiara Rochosa"]},
+        luvas:{Fogo:["Luvas de Cinza","Manoplas Ardentes","Garras de Brasas"], Água:["Luvas da Maré","Manoplas da Correnteza","Garras de Gelo Líquido"], Terra:["Luvas de Argila","Manoplas de Pedra","Garras de Raiz"]},
+        armadura:{Fogo:["Armadura Vulcânica","Manto Rubro","Peitoral Incandescente"], Água:["Armadura das Marés","Manto da Névoa","Couraça Oceânica"], Terra:["Armadura do Vale","Manto Musgoso","Peitoral Granítico"]},
+        calcas:{Fogo:["Calças de Magma","Grevas Rubras","Calças de Cinzas"], Água:["Calças Oceânicas","Grevas da Maré","Calças da Chuva"], Terra:["Calças Rochosas","Grevas do Vale","Calças de Musgo"]},
+        sapatos:{Fogo:["Botas Vulcânicas","Botas Escarlates","Passos de Brasa"], Água:["Botas da Maré","Botas da Correnteza","Passos da Névoa"], Terra:["Botas de Pedra","Botas do Vale","Passos de Argila"]}
+      };
+      const name = names[slot][enemyData.element][Math.floor(Math.random() * names[slot][enemyData.element].length)];
+      return {name, slot, element:enemyData.element, bonus, statType, rarity, sellValue: bonus * 4 + player.level * 2, refineLevel:0};
+    }
+
+    function craftItem(recipeId){
+      const recipe = CRAFT_RECIPES.find(r => r.id===recipeId);
+      if(!recipe) return;
+      if(player.materials[recipe.material] < recipe.cost){
+        addLog(`Materiais insuficientes para forjar ${recipe.name}.`);
+        return render();
+      }
+
+      player.materials[recipe.material] -= recipe.cost;
+      const valueBonus = recipe.bonus + Math.floor(player.level/2);
+      const item = {
+        name:recipe.name,
+        slot:recipe.slot,
+        element:recipe.element,
+        bonus:valueBonus,
+        statType:recipe.statType,
+        rarity:recipe.rarity,
+        sellValue:valueBonus * 5,
+        refineLevel:0
+      };
+
+      const equippedItem = player.equipment[recipe.slot];
+      if(equippedItem){
+        player.inventory.push(equippedItem);
+        addLog(`${equippedItem.name} foi removido do slot ${formatSlotName(recipe.slot)} e voltou ao inventário.`);
+        player.equipment[recipe.slot] = item;
+        ensureEconomy();
+        player.economy.itemsCrafted += 1;
+        addLog(`${player.name} forjou ${item.name} e equipou automaticamente no slot ${formatSlotName(recipe.slot)}.`);
+      } else {
+        player.inventory.push(item);
+      updateQuest('craft');
+        addLog(`${player.name} forjou ${item.name}.`);
+      }
+
+      saveGame();
+      render();
+    }
+
+    function getRefineCost(item){
+      return 2 + (item.refineLevel || 0);
+    }
+
+    function refineInventoryItem(index){
+      const item = player.inventory[index];
+      if(!item) return;
+      const cost = getRefineCost(item);
+      if(player.materials[item.element] < cost){
+        addLog(`Materiais insuficientes para refinar ${item.name}.`);
+        return render();
+      }
+      player.materials[item.element] -= cost;
+      item.refineLevel = (item.refineLevel || 0) + 1;
+      if(Math.random()<0.2){
+        item.bonus = Math.max(1,item.bonus-1);
+        addLog("Refino falhou! Item perdeu poder.");
+      } else {
+        item.bonus += 2;
+      }
+      item.sellValue += 8;
+      ensureEconomy();
+      player.economy.itemsRefined += 1;
+      addLog(`${item.name} foi refinado para +${item.refineLevel}.`);
+      saveGame(); render();
+    }
+
+    function mineResources(){
+      const favored = MAPS[player.currentMap].favoredElement, node = getCurrentNode();
+      let qty = 1 + Math.floor(Math.random()*2);
+      if(node.type === "mineracao") qty += 2;
+      player.materials[favored] += qty;
+      const extra = ELEMENTS[Math.floor(Math.random()*ELEMENTS.length)];
+      player.materials[extra] += 1;
+      player.worldProgress[player.currentMap].mines += 1;
+      updateQuest('mine');
+      ensureEconomy();
+      player.economy.miningYield += qty + 1;
+      addLog(`${player.name} minerou em ${node.name} e obteve ${qty} material(is) de ${favored} e 1 de ${extra}.`);
+      saveGame(); render();
+    }
+
+    function getInnCost(){ return 15 + (player.level * 5); }
+    function stayAtInn(){
+      const cost = getInnCost();
+      if(player.gold < cost){ addLog("Ouro insuficiente para ficar na estalagem."); return render(); }
+      player.gold -= cost; ensureEconomy(); player.economy.goldSpent += cost; player.hp = player.maxHp; player.mana = getEffectiveMaxMana();
+      addLog(`${player.name} ficou na estalagem, recuperou HP e Mana completos e pagou ${cost} ouro.`);
+      saveGame(); render();
+    }
+
+    function getCurrentNode(){ return MAP_NODES[player.currentMap].find(n => n.id===player.currentNode) || MAP_NODES[player.currentMap][0]; }
+    function travelNode(nodeId){
+      const node = MAP_NODES[player.currentMap].find(n => n.id===nodeId);
+      if(!node) return;
+      player.currentNode = nodeId;
+
+      if(node.type === "combate"){
+        addLog(`${player.name} chegou em ${node.name} e entrou em combate!`);
+        saveGame();
+        startBattle();
+        return;
+      }
+
+      if(node.type === "evento"){
+        player.eventChoice = createRandomEvent();
+        addLog(`${player.name} encontrou um evento em ${node.name}.`);
+        currentScreen = "event";
+        saveGame();
+        render();
+        return;
+      }
+
+      if(node.type === "mineracao"){
+        player.homeCraftStock.manaEssence += 1;
+        addLog(`Ao chegar em ${node.name}, você encontrou 1 essência de mana.`);
+      }
+
+      addLog(`${player.name} se moveu para ${node.name}.`);
+      saveGame();
+      render();
+    }
+
+    function equipItem(index){
+      const item = player.inventory[index]; if(!item) return;
+      const slot = item.slot, old = player.equipment[slot];
+      if(old){ player.inventory.push(old); addLog(`${old.name} voltou para o inventário.`); }
+      player.equipment[slot] = item; player.inventory.splice(index,1);
+      addLog(`${item.name} foi equipado em ${formatSlotName(slot)}.`);
+      saveGame(); render();
+    }
+    function unequipItem(slot){
+      const item = player.equipment[slot]; if(!item) return;
+      player.inventory.push(item);
+      updateQuest('craft'); player.equipment[slot]=null;
+      addLog(`${item.name} foi desequipado e voltou ao inventário.`);
+      saveGame(); render();
+    }
+    function sellItem(index){
+      const item = player.inventory[index]; if(!item) return;
+      const finalSell = getDynamicSellValue(item); player.gold += finalSell; ensureEconomy(); player.economy.goldEarned += finalSell; player.economy.itemsSold += 1; player.inventory.splice(index,1);
+      addLog(`${item.name} foi vendido por ${finalSell} ouro.`);
+      saveGame(); render();
+    }
+    function sellEquippedItem(slot){
+      const item = player.equipment[slot]; if(!item) return;
+      const finalSell = getDynamicSellValue(item); player.gold += finalSell; ensureEconomy(); player.economy.goldEarned += finalSell; player.economy.itemsSold += 1; player.equipment[slot]=null;
+      addLog(`${item.name} estava equipado e foi vendido por ${finalSell} ouro.`);
+      saveGame(); render();
+    }
+
+    function buyPotion(){
+      if(player.gold < 20){ addLog("Ouro insuficiente para comprar poção de cura."); return render(); }
+      player.gold -= 20; ensureEconomy(); player.economy.goldSpent += 20; player.potions += 1; player.healPotions.frasco += 1; addLog("Você comprou 1 frasco de cura."); saveGame(); render();
+    }
+    function buyManaPotion(){
+      if(player.gold < 25){ addLog("Ouro insuficiente para comprar poção de mana."); return render(); }
+      player.gold -= 25; ensureEconomy(); player.economy.goldSpent += 25; player.manaPotions += 1; player.manaPotionStock.frasco += 1; addLog("Você comprou 1 frasco de mana."); saveGame(); render();
+    }
+    function buyPotionTier(kind, id){
+      const list = kind === "heal" ? POTION_SHOP.heal : POTION_SHOP.mana;
+      const item = list.find(p => p.id === id);
+      if(!item) return;
+      if(player.gold < item.price){
+        addLog("Ouro insuficiente para comprar esta poção.");
+        return render();
+      }
+      player.gold -= item.price;
+      ensureEconomy();
+      player.economy.goldSpent += item.price;
+      if(kind === "heal"){
+        if(id.includes("frasco")){ player.healPotions.frasco += 1; player.potions += 1; }
+        if(id.includes("calice")) player.healPotions.calice += 1;
+        if(id.includes("garrafa")) player.healPotions.garrafa += 1;
+      } else {
+        if(id.includes("frasco")){ player.manaPotionStock.frasco += 1; player.manaPotions += 1; }
+        if(id.includes("calice")) player.manaPotionStock.calice += 1;
+        if(id.includes("garrafa")) player.manaPotionStock.garrafa += 1;
+      }
+      addLog(`Você comprou ${item.name}.`);
+      saveGame();
+      render();
+    }
+    function buySpell(spellId){
+      const spell = SPELL_BOOK.find(s => s.id===spellId); if(!spell) return;
+      if(player.learnedSpells.includes(spell.id)){ addLog(`Você já aprendeu ${spell.name}.`); return render(); }
+      if(player.aura < spell.auraCost){ addLog(`Auras insuficientes para aprender ${spell.name}.`); return render(); }
+      player.aura -= spell.auraCost; player.learnedSpells.push(spell.id);
+      addLog(`${player.name} aprendeu a magia ${spell.name}.`);
+      saveGame(); render();
+    }
+
+    function changeMap(mapName){
+      if(!MAPS[mapName]) return;
+      player.currentMap = mapName; player.currentNode = MAP_NODES[mapName][0].id;
+      if(!player.worldProgress[mapName]) player.worldProgress[mapName] = {clears:0,bossUnlocked:false,bossDefeated:false,mines:0};
+      addLog(`${player.name} viajou para ${mapName}.`);
+      currentScreen = "world"; saveGame(); render();
+    }
+
+    function goTab(tab){ currentScreen = tab; saveGame(); render(); }
+    function addLog(message){ battleLog.push(message); }
+
+    function grantCompanionXP(){
+      if(!player.companion) return;
+      player.companion.xp = (player.companion.xp || 0) + 1;
+      if(player.companion.xp >= 3){
+        player.companion.xp = 0;
+        player.companion.level = (player.companion.level || 1) + 1;
+        player.companion.bonus += 1;
+        addLog(`🐾 ${player.companion.name} subiu para o nível ${player.companion.level}.`);
+      }
+    }
+
+    function updateQuest(type, data={}){
+      player.quests.forEach(q=>{
+        if(q.claimed) return;
+        if(type==="battle" && q.id==="q1") q.progress++;
+        if(type==="mine" && q.id==="q2") q.progress++;
+        if(type==="craft" && q.id==="q3") q.progress++;
+        if(type==="battle" && q.type==="map" && q.map===data.map) q.progress++;
+        if(type==="boss" && q.type==="boss" && q.map===data.map) q.progress = q.target;
+        if(q.progress>=q.target) q.done = true;
+      });
+    }
+
+
+    function hasSaveGame(){ return !!localStorage.getItem(SAVE_KEY); }
+    function migrateSave(p){
+      if(!p.version) p.version = 1;
+      if(!p.attributes) p.attributes = {forca:0,resistencia:0,inteligencia:0,points:0};
+      if(typeof p.attributes.points !== 'number') p.attributes.points = 0;
+      if(!p.learnedSpells) p.learnedSpells = [];
+      if(!p.healPotions) p.healPotions = {frasco:p.potions||0, calice:0, garrafa:0};
+      if(!p.manaPotionStock) p.manaPotionStock = {frasco:p.manaPotions||0, calice:0, garrafa:0};
+      if(!p.homeCraftStock) p.homeCraftStock = {healEssence:0,manaEssence:0};
+      if(p.eventChoice === undefined) p.eventChoice = null;
+      if(!p.quests) p.quests = [];
+      if(!p.innUniqueQuests) p.innUniqueQuests = [];
+      if(!p.economy) p.economy = {goldEarned:0,goldSpent:0,itemsSold:0,itemsCrafted:0,itemsRefined:0,battlesWon:0,battlesLost:0,miningYield:0};
+      if(!p.worldProgress) p.worldProgress = {Floresta:{clears:0,bossUnlocked:false,bossDefeated:false,mines:0},Reino:{clears:0,bossUnlocked:false,bossDefeated:false,mines:0},Lago:{clears:0,bossUnlocked:false,bossDefeated:false,mines:0}};
+      ['Floresta','Reino','Lago'].forEach(map=>{ if(!p.worldProgress[map]) p.worldProgress[map] = {clears:0,bossUnlocked:false,bossDefeated:false,mines:0}; });
+      p.version = SAVE_VERSION;
+      return p;
+    }
+    function saveGame(){
+      if(!player) return;
+      const payload = {player, enemy, battleActive, battleLog, currentScreen, selectedBattleRank};
+      localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
+    }
+    function loadGame(){
+      const raw = localStorage.getItem(SAVE_KEY); if(!raw) return false;
+      try{
+        const data = JSON.parse(raw);
+        player = data.player || null;
+        enemy = data.enemy || null;
+        battleActive = !!data.battleActive;
+        battleLog = Array.isArray(data.battleLog) ? data.battleLog : [];
+        currentScreen = data.currentScreen || "casa";
+        selectedBattleRank = data.selectedBattleRank || "random";
+        migrateSave();
+        return !!player;
+      }catch(e){
+        console.error("Erro ao carregar save:", e);
+        return false;
+      }
+    }
+    function continueGame(){ if(loadGame()){ addLog("Progresso carregado com sucesso."); render(); } }
+    function resetSave(){ localStorage.removeItem(SAVE_KEY); player=null; enemy=null; battleActive=false; battleLog=[]; currentScreen="base"; selectedBattleRank="random"; render(); }
+    function manualSave(){ saveGame(); addLog("Progresso salvo com sucesso."); render(); }
+
+    render();
+  </script>
+</body>
+</html>
+
+    async function githubBackupLoad(){
+      const token = document.getElementById("ghToken")?.value || "";
+      const gistId = document.getElementById("ghGistId")?.value || "";
+
+      if(!token || !gistId){
+        alert("Informe token e gist ID.");
+        return;
+      }
+
+      try{
+        const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+
+        const data = await res.json();
+        const file = Object.values(data.files || {})[0];
+
+        const parsed = JSON.parse(file.content);
+        const restored = parsed.payload || parsed;
+
+        player = restored.player;
+        enemy = restored.enemy;
+        battleActive = restored.battleActive;
+        battleLog = restored.battleLog;
+        currentScreen = restored.currentScreen;
+
+        saveGame();
+        render();
+        alert("Save carregado!");
+      } catch(e){
+        alert("Erro ao carregar save.");
+      }
+    }
